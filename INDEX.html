@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101827">
+<title>Marcador de Futbolito</title>
+<style>
+:root{--bg:#0b1220;--panel:#141f31;--line:#2a3951;--text:#f7fafc;--muted:#aebbd0;--green:#31c48d;--blue:#60a5fa;--gold:#fbbf24}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#182943 0,#0b1220 60%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh;padding:16px}
+.app{max-width:950px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}.brand{font-size:clamp(22px,4vw,32px);font-weight:850;letter-spacing:-.5px}.tag{color:var(--muted);font-size:13px}.pill{border:1px solid var(--line);border-radius:999px;padding:7px 12px;color:var(--muted);font-size:12px}
+.panel{background:rgba(20,31,49,.94);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:14px;box-shadow:0 14px 36px #0002}
+.setup{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field label{display:block;color:var(--muted);font-size:12px;margin:0 0 6px}.field input{width:100%;border:1px solid var(--line);background:#0c1524;color:white;border-radius:11px;padding:12px;font-size:16px}
+.timer{text-align:center}.period{color:var(--gold);font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px}.clock{font-variant-numeric:tabular-nums;font-size:clamp(56px,13vw,100px);font-weight:900;letter-spacing:-4px;line-height:1.15;margin:8px 0 14px}.clock.running{color:var(--green)}
+.controls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.btn{border:1px solid var(--line);background:#223149;color:white;border-radius:12px;padding:12px 16px;font-weight:750;font-size:14px;cursor:pointer}.btn:active,.scorebtn:active{transform:scale(.98)}.primary{background:var(--green);border-color:var(--green);color:#062317}.subtle{background:transparent}
+.scoreboard{display:grid;grid-template-columns:1fr 1fr;gap:14px}.team{border:1px solid var(--line);border-radius:18px;padding:16px;text-align:center;min-width:0}.team.home{background:linear-gradient(180deg,#163d37,#142333)}.team.away{background:linear-gradient(180deg,#172f4e,#142333)}.teamname{font-weight:800;font-size:clamp(16px,3vw,23px);overflow-wrap:anywhere}.score{font-size:clamp(68px,14vw,100px);font-weight:900;line-height:1.1;font-variant-numeric:tabular-nums}.scorebuttons{display:flex;justify-content:center;gap:12px}.scorebtn{width:54px;height:48px;border-radius:13px;border:1px solid #ffffff30;color:white;font-size:26px;font-weight:800;background:#ffffff12;cursor:pointer}.scorebtn.plus{background:var(--green);color:#062317;border-color:var(--green)}.team.away .scorebtn.plus{background:var(--blue);border-color:var(--blue);color:#081a2b}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:14px}.statbox{background:#0e1828;border:1px solid var(--line);border-radius:15px;padding:14px}.stathead{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:800}.statcount{font-size:34px;font-weight:900;font-variant-numeric:tabular-nums}.smallbtn{padding:7px 13px;font-size:18px;border-radius:10px}
+.footer{color:var(--muted);font-size:12px;text-align:center;padding:6px 0 18px}.note{color:var(--muted);font-size:12px;margin-top:10px}
+@media(max-width:560px){body{padding:10px}.panel{padding:13px;border-radius:16px}.scoreboard,.stats{gap:8px}.team{padding:12px 7px}.scorebtn{width:44px;height:44px}.btn{padding:11px 12px}.setup{gap:8px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div><div class="brand">⚽ Marcador de Futbolito</div><div class="tag">Tiempo · Goles · Faltas</div></div><span class="pill">2 tiempos de 25 min</span></header>
+  <section class="panel">
+    <div class="setup">
+      <div class="field"><label for="homeName">Equipo local</label><input id="homeName" value="Mala Clase" maxlength="32"></div>
+      <div class="field"><label for="awayName">Equipo rival</label><input id="awayName" value="Rival" maxlength="32"></div>
+    </div>
+    <div class="note">Puedes cambiar los nombres antes o durante el partido.</div>
+  </section>
+  <section class="panel timer">
+    <div class="period" id="periodLabel">Primer tiempo · 0:00 a 25:00</div>
+    <div class="clock" id="clock">00:00</div>
+    <div class="controls">
+      <button class="btn primary" id="startBtn">▶ Iniciar</button>
+      <button class="btn" id="pauseBtn">Ⅱ Pausar</button>
+      <button class="btn" id="periodBtn">Segundo tiempo</button>
+      <button class="btn subtle" id="resetBtn">↻ Reiniciar partido</button>
+    </div>
+    <div class="note">El cronómetro avanza desde 00:00 hasta 25:00 y se detiene al terminar cada tiempo.</div>
+  </section>
+  <section class="scoreboard">
+    <div class="team home">
+      <div class="teamname" id="homeLabel">Mala Clase</div><div class="score" id="homeScore">0</div>
+      <div class="scorebuttons"><button class="scorebtn" id="homeMinus" aria-label="Restar gol local">−</button><button class="scorebtn plus" id="homePlus" aria-label="Sumar gol local">+</button></div>
+    </div>
+    <div class="team away">
+      <div class="teamname" id="awayLabel">Rival</div><div class="score" id="awayScore">0</div>
+      <div class="scorebuttons"><button class="scorebtn" id="awayMinus" aria-label="Restar gol visitante">−</button><button class="scorebtn plus" id="awayPlus" aria-label="Sumar gol visitante">+</button></div>
+    </div>
+  </section>
+  <section class="panel" style="margin-top:14px">
+    <div style="font-weight:850;font-size:18px;margin-bottom:12px">Conteo de faltas</div>
+    <div class="stats">
+      <div class="statbox"><div class="stathead"><span id="homeFoulLabel">Mala Clase</span><span>🟢</span></div><div class="statcount" id="homeFouls">0</div><div class="controls"><button class="btn smallbtn" id="homeFoulMinus">−</button><button class="btn smallbtn" id="homeFoulPlus">+</button></div></div>
+      <div class="statbox"><div class="stathead"><span id="awayFoulLabel">Rival</span><span>🔵</span></div><div class="statcount" id="awayFouls">0</div><div class="controls"><button class="btn smallbtn" id="awayFoulMinus">−</button><button class="btn smallbtn" id="awayFoulPlus">+</button></div></div>
+    </div>
+  </section>
+  <div class="footer">Consejo: agrega esta página a la pantalla de inicio del celular para abrirla como una app.</div>
+</div>
+<script>
+const HALF=25*60;
+let period=1, elapsed=0, running=false, startedAt=0, interval=null;
+let scores=[0,0], fouls=[0,0];
+const $=id=>document.getElementById(id);
+function names(){let h=$('homeName').value.trim()||'Local',a=$('awayName').value.trim()||'Visita';$('homeLabel').textContent=h;$('awayLabel').textContent=a;$('homeFoulLabel').textContent=h;$('awayFoulLabel').textContent=a;}
+function render(){names();let m=Math.floor(elapsed/60),s=elapsed%60;$('clock').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');$('clock').classList.toggle('running',running);$('periodLabel').textContent=(period===1?'Primer tiempo':period===2?'Segundo tiempo':'Partido finalizado')+' · '+(period<=2?'hasta 25:00':'00:00');$('homeScore').textContent=scores[0];$('awayScore').textContent=scores[1];$('homeFouls').textContent=fouls[0];$('awayFouls').textContent=fouls[1];$('startBtn').disabled=running||elapsed>=HALF||period>2;$('startBtn').style.opacity=$('startBtn').disabled?.5:1;$('periodBtn').disabled=period>2;$('periodBtn').textContent=period===1?'Pasar al segundo tiempo':period===2?'Finalizar partido':'Partido finalizado';}
+function stop(){running=false;if(interval){clearInterval(interval);interval=null;}render();}
+function tick(){elapsed=Math.min(HALF,Math.floor((Date.now()-startedAt)/1000));if(elapsed>=HALF){elapsed=HALF;stop();}else render();}
+$('startBtn').onclick=()=>{if(running||elapsed>=HALF||period>2)return;running=true;startedAt=Date.now()-elapsed*1000;interval=setInterval(tick,200);render();};
+$('pauseBtn').onclick=()=>{if(running)elapsed=Math.min(HALF,Math.floor((Date.now()-startedAt)/1000));stop();};
+$('periodBtn').onclick=()=>{stop();if(period===1){period=2;elapsed=0;}else if(period===2){period=3;elapsed=0;}render();};
+$('resetBtn').onclick=()=>{if(!confirm('¿Reiniciar el partido completo? Se borrarán goles y faltas.'))return;stop();period=1;elapsed=0;scores=[0,0];fouls=[0,0];render();};
+[['homePlus',0,1],['homeMinus',0,-1],['awayPlus',1,1],['awayMinus',1,-1]].forEach(([id,i,d])=>$(id).onclick=()=>{scores[i]=Math.max(0,scores[i]+d);render();});
+[['homeFoulPlus',0,1],['homeFoulMinus',0,-1],['awayFoulPlus',1,1],['awayFoulMinus',1,-1]].forEach(([id,i,d])=>$(id).onclick=()=>{fouls[i]=Math.max(0,fouls[i]+d);render();});
+$('homeName').addEventListener('input',render);$('awayName').addEventListener('input',render);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&running)tick();});
+render();
+</script>
+</body>
+</html>
