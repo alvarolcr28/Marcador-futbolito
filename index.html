@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0b1220">
-<title>Marcador de Futbolito — Propuesta B</title>
+<title>Marcador de Futbolito · Modo Árbitro v5</title>
 <style>
 :root{--bg:#0b1220;--panel:#141f31;--line:#2a3951;--text:#f7fafc;--muted:#aebbd0;--green:#31c48d;--blue:#60a5fa;--gold:#fbbf24;--red:#fb7185}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#1a2b45 0,#0b1220 62%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh;padding:14px}
@@ -16,23 +16,194 @@
 .lower-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.yellow-list{display:grid;gap:8px}.yellow-card{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0e1828;border:1px solid var(--line);border-radius:12px;padding:10px}.yellow-card .who{font-weight:800}.yellow-card small{display:block;color:var(--muted);font-size:12px}.card-badge{background:var(--gold);color:#302100;font-weight:900;border-radius:5px;padding:3px 7px;font-size:12px}.empty{color:var(--muted);font-size:13px}.inline{display:flex;gap:8px;flex-wrap:wrap}.inline>*{flex:1;min-width:100px}.field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.roster-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.footer{color:var(--muted);font-size:12px;text-align:center;padding:8px 0 18px}
 dialog{background:#141f31;color:var(--text);border:1px solid var(--line);border-radius:18px;max-width:520px;width:calc(100% - 24px);padding:18px;box-shadow:0 25px 80px #0009}dialog::backdrop{background:#020611bd}.modal-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}.modal-head h2{margin:0;font-size:20px}.close{border:1px solid var(--line);border-radius:10px;background:#223149;color:white;padding:7px 11px;font-size:18px}.roster-list{display:grid;gap:7px;margin-top:12px;max-height:240px;overflow:auto}.roster-item{display:flex;align-items:center;gap:8px;background:#0c1524;border:1px solid var(--line);border-radius:10px;padding:8px}.roster-item span{flex:1}.roster-item input{width:65px;background:#111e30;border:1px solid var(--line);color:white;border-radius:8px;padding:7px}.note{color:var(--muted);font-size:12px;margin-top:9px}
 @media(max-width:620px){body{padding:7px}.top{align-items:center;gap:7px;margin-bottom:8px}.brand{font-size:20px;line-height:1.05}.tag{font-size:11px}.iconbtn{width:42px;height:42px;border-radius:12px}.pill{display:none}.timer{padding:10px 10px 11px}.timer-row{grid-template-columns:1fr;gap:7px;margin:2px auto 0;padding:0}.clock{font-size:clamp(62px,17vw,94px);letter-spacing:-3px;text-align:center}.toggle{min-height:42px;max-width:160px;padding:7px 8px;font-size:14px;border-radius:11px}.clock-settings{position:static;justify-content:flex-start;margin-top:5px;font-size:11px}.minutes{width:52px;padding:5px}.timer .actions{justify-content:stretch;margin-top:8px}.timer .actions .btn{flex:1;padding:9px 7px;font-size:12px}.scoreboard,.stats,.lower-grid{gap:7px}.team{padding:10px 5px;border-radius:15px}.panel{padding:10px;border-radius:15px;margin-bottom:9px}.scoreline{gap:4px;margin:9px 0}.scorebtn{width:clamp(36px,11vw,46px);height:45px;border-radius:11px;font-size:28px}.score{font-size:clamp(45px,13vw,68px)}.teamname{font-size:clamp(13px,3.6vw,17px)}.team-sub{font-size:10px}.team .btn{padding:9px 5px;font-size:11px;width:100%}.setup{gap:8px}.teamselect{font-size:12px;padding:7px}.section-title{font-size:15px;margin-bottom:9px}.statbox{padding:9px}.statcount{font-size:29px}.statbuttons .btn{font-size:18px;padding:7px}.note{font-size:11px}}
+
+/* Mejoras comunes a las tres alternativas de revisión */
+button, select, input, summary {touch-action:manipulation}
+button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.config-fold,.history-fold{border:1px solid var(--line);border-radius:16px;margin-bottom:10px;overflow:hidden;background:var(--panel)}
+.config-fold>summary,.history-fold>summary{padding:13px 15px;font-size:14px;font-weight:800;cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:46px}
+.config-fold>summary:after,.history-fold>summary:after{content:'＋';color:var(--gold);font-size:19px}
+.config-fold[open]>summary:after,.history-fold[open]>summary:after{content:'−'}
+.config-fold>summary::-webkit-details-marker,.history-fold>summary::-webkit-details-marker{display:none}
+.config-fold>.panel,.history-fold>.panel{box-shadow:none;border:0;border-top:1px solid var(--line);border-radius:0;margin:0}
+.config-fold .section-title{display:none}
+.history-fold .note{display:none}
+.timer .clock{overflow:visible}
+.timer .toggle:disabled{opacity:.55}
+.team .scorebtn{touch-action:manipulation}
+.scorebtn:active,.btn:active,.toggle:active{transform:scale(.97)}
+#resetBtn{background:#b92535!important;border-color:#e34b59!important;color:#fff!important}
+#resetBtn:hover{background:#931b28!important}
+dialog{max-height:min(90dvh,820px);overflow-y:auto}
+#teamsDialog{max-width:600px}
+#teamsDialog .roster-item input:nth-child(2){min-width:0}
+#teamsDialog .roster-item .btn{padding:9px 10px}
+@media(max-width:620px){
+ .app{max-width:100%;min-width:0}
+ .scoreboard,.stats{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+ .team{min-width:0}.stathead{font-size:12px;overflow-wrap:anywhere}
+ .timer .clock-settings{position:static;justify-content:center;margin-top:6px}
+ .timer .actions{justify-content:center}
+ .timer .actions .btn{flex:1 1 0;min-width:0;overflow-wrap:break-word}
+ .roster-item{min-width:0}
+ .scorebtn,.toggle,.statbuttons .btn{min-height:44px}
+}
+
+
+/* 03 · Cabina árbitro: máximo contraste y acceso rápido */
+:root{--bg:#05090b;--panel:#101719;--line:#405358;--text:#fff;--muted:#c4d4d8;--green:#28e3a1;--blue:#58b7fc;--gold:#ffe05a;--red:#ff5a6e}
+body{background:#060c0e;padding:10px}
+.app{max-width:1080px}.top{margin-bottom:8px}
+.brand{font-size:clamp(19px,3vw,27px)}
+.panel{background:#0f191b;border:1px solid #405358;box-shadow:none;border-radius:11px;padding:12px;margin-bottom:9px}
+.timer{padding:12px 16px;background:#101f1a;border-left:5px solid var(--green)}
+.period{color:#ffe05a}
+.timer-row{grid-template-columns:minmax(0,1fr) auto;max-width:840px;gap:14px}
+.clock{order:1;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:clamp(78px,10vw,120px);font-weight:900;letter-spacing:-5px;text-align:center}
+.toggle{order:2;min-width:130px;max-width:150px;min-height:58px;border-radius:7px;font-size:16px}
+.clock-settings{position:static;justify-content:center;margin-top:3px}
+.timer .actions{margin-top:8px}
+.btn{border-radius:8px}.scoreboard{gap:9px;margin-bottom:9px}
+.team{border-radius:11px;border:2px solid var(--line);padding:12px 9px}
+.team.home{background:#0e3427;border-color:#287b5a}
+.team.away{background:#0b2640;border-color:#2b5f8e}
+.scoreline{margin:8px 0}.score{font-family:ui-monospace,Consolas,monospace;font-size:clamp(69px,10vw,95px)}
+.scorebtn{border-radius:8px;min-height:57px;font-size:34px}
+.team .btn{background:#17252a;min-height:42px}
+.match-fouls{margin-top:0!important}
+.match-fouls .section-title{font-size:13px;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}
+.stats{gap:10px}.statbox{background:#111d20;border-radius:8px}
+.statcount{color:#ffdd68;font-family:ui-monospace,Consolas,monospace;font-size:34px}
+.statbuttons .btn{background:#203438;border-radius:7px;min-height:44px}
+.match-fouls>.note{display:none}
+.config-fold,.history-fold{border-radius:8px;background:#101719}
+@media(max-width:620px){
+ body{padding:5px}.top{margin-bottom:7px}
+ .brand{font-size:18px}.tag{font-size:10px}
+ .timer{padding:9px 8px}
+ .timer-row{grid-template-columns:minmax(0,1fr) 102px;gap:5px}
+ .clock{font-size:clamp(53px,14vw,74px);letter-spacing:-4px;text-align:center}
+ .toggle{min-width:0;max-width:102px;min-height:49px;font-size:13px;padding:5px 3px}
+ .clock-settings{justify-content:center;margin-top:5px;font-size:10px}
+ .timer .actions{margin-top:7px;gap:6px}.timer .actions .btn{padding:9px 5px;font-size:11px}
+ .team{padding:9px 4px}.teamname{font-size:clamp(13px,3.7vw,17px)}
+ .score{font-size:clamp(48px,12.5vw,66px)}
+ .scorebtn{width:clamp(37px,10vw,46px);height:47px;min-height:45px;font-size:26px}
+ .scoreline{margin:8px 0}
+ .team .btn{padding:9px 3px;font-size:11px;min-height:43px}
+ .match-fouls{padding:8px;margin-bottom:8px!important}
+ .statbox{padding:8px}.statcount{font-size:30px}
+ .stathead{font-size:11px}.statbuttons{gap:5px}
+ .statbuttons .btn{min-height:40px;padding:7px}
+ .statbox>.note{font-size:10px}
+}
+
+
+/* ========= Cronómetro flotante común ========= */
+.float-timer{position:fixed;top:max(5px,env(safe-area-inset-top,0px));left:50%;width:min(calc(100% - 18px),720px);z-index:60;transform:translate(-50%,-135%);opacity:0;visibility:hidden;pointer-events:none;transition:transform .2s ease,opacity .2s ease,visibility .2s}
+.float-timer.shown{transform:translate(-50%,0);opacity:1;visibility:visible;pointer-events:auto}
+.float-inner{display:grid;grid-template-columns:56px minmax(0,1fr) 56px;align-items:center;gap:6px;min-height:56px;padding:5px 9px;border:1px solid #a5b6b366;border-radius:15px;background:rgba(9,20,22,.72);box-shadow:0 8px 22px #0006;backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px)}
+.float-control{width:48px;height:45px;border-radius:10px;border:1px solid #42d6a0b5;background:#174b39;color:#effff9;font-size:22px;font-weight:900;cursor:pointer;touch-action:manipulation}
+.float-control:disabled{opacity:.5;cursor:not-allowed}
+.float-main{display:flex;justify-content:center;align-items:center;gap:10px;min-width:0}
+.float-clock{font:900 clamp(29px,7vw,39px)/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:-1.8px;color:#f6fff9;white-space:nowrap;text-shadow:0 0 12px #1ce4a24d;font-variant-numeric:tabular-nums}
+.float-clock.active{color:var(--green)}
+.float-period{font-weight:800;font-size:10px;color:#b5e5d1;letter-spacing:.2px;max-width:80px;text-transform:uppercase}
+.float-extra{font-size:13px;text-align:center;color:#d9e7e2;font-weight:900;white-space:nowrap}
+.float-timer:not(.shown) button{visibility:hidden}
+@media(max-width:430px){.float-inner{grid-template-columns:48px minmax(0,1fr) 44px;min-height:53px;padding:5px 6px}.float-control{width:44px;height:43px}.float-period{font-size:9px;max-width:52px}.float-main{gap:6px}.float-clock{font-size:clamp(28px,8vw,35px)}}
+@media(prefers-reduced-motion:reduce){.float-timer{transition:none}}
+/* Acciones inequívocas en pantalla táctil */
+.g-action,.f-action{font-weight:950;letter-spacing:.4px;touch-action:manipulation}
+.g-action{background:var(--green);color:#042a1f;border:2px solid #b9ffe3}
+.team.away .g-action{background:var(--blue);color:#061d30;border-color:#bddfff}
+.f-action{background:#57421a!important;color:#ffefb5!important;border:2px solid #d2aa53!important}
+.f-action:active,.g-action:active{filter:brightness(1.16)}
+.adjust-link{background:transparent!important;border-color:#ffffff30!important;color:#d2d9dd!important}
+.match-fouls{border-top:3px solid #c59b4c}
+.match-fouls .section-title{color:#ffde91}
+@media(max-width:620px){.float-timer{top:max(4px,env(safe-area-inset-top,0px))}}
+
+/* 3 · Botonera segura, con deshacer la última acción */
+.team .scoreline{display:grid;grid-template-columns:32px minmax(45px,1fr);gap:7px;margin:8px auto;max-width:250px}
+.team .scoreline .score{grid-column:1 / -1;font-size:clamp(63px,11vw,100px);text-align:center}
+.team .scoreline .g-action{grid-column:2;grid-row:2;width:100%;height:60px;font-size:18px;border-radius:10px}
+.team .scoreline .adjust-link{grid-column:1;grid-row:2;width:32px;height:39px;min-height:39px;align-self:center;font-size:21px}
+.match-fouls .statbuttons .f-action{font-size:13px;min-height:44px}
+.match-fouls .statbuttons .btn:not(.f-action){flex:0 0 38px;font-size:20px}
+.last-action{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:10px 12px;border-radius:10px;border:1px solid #b5a26d;background:#231e11;margin-bottom:9px;min-height:55px}
+.last-action.hidden{display:none}
+.last-action span{font-size:12px;color:#ffebbc}
+.last-action button{border:1px solid #f5dfac;background:#e8bd55;color:#231c09;padding:10px 12px;border-radius:8px;font-weight:900;font-size:12px;cursor:pointer;min-height:43px}
+.float-inner{background:rgba(10,23,22,.73)}
+.float-extra{background:#23473d;border-radius:8px;padding:5px 4px;letter-spacing:-.3px}
+@media(max-width:620px){.team .scoreline{grid-template-columns:25px minmax(0,1fr);gap:5px;margin:4px auto 7px}.team .scoreline .score{font-size:clamp(53px,14vw,71px)}.team .scoreline .g-action{height:52px;font-size:clamp(12px,3.6vw,16px)}.team .scoreline .adjust-link{width:25px;min-height:39px}.match-fouls .statbuttons .f-action{font-size:clamp(10px,2.7vw,12px);padding:6px 2px}.match-fouls .statbuttons .btn:not(.f-action){flex:0 0 27px;padding:6px 2px}.last-action{padding:8px}.float-extra{font-size:11px}}
+
+
+/* v5: controles amplios, marcador flotante legible y tarjetas rojas */
+.float-inner{grid-template-columns:58px minmax(0,1fr) 100px}
+.float-extra{display:flex;align-items:center;justify-content:center;gap:4px;min-width:86px;padding:7px 6px;font-size:clamp(20px,3.7vw,27px);font-variant-numeric:tabular-nums;line-height:1;font-weight:950;border:1px solid #77bca077}
+#floatingHomeScore{color:#36f1ad}
+#floatingAwayScore{color:#85c9ff}
+.float-extra .score-dash{color:#d4e6de;font-size:.8em}
+.team .scoreline{grid-template-columns:52px minmax(0,1fr);gap:9px;max-width:280px}
+.team .scoreline .adjust-link{width:52px;height:56px;min-height:56px;border-radius:10px;font-size:30px;background:#ffffff18!important;border:2px solid #ffffff73!important;color:#fff!important}
+.team .scoreline .g-action{min-height:58px}
+.match-fouls .statbuttons .btn:not(.f-action){flex:0 0 52px;min-width:52px;min-height:54px;font-size:30px;font-weight:900;border:2px solid #a6babe;line-height:1;padding:5px}
+.match-fouls .statbuttons .f-action{min-height:54px;font-size:13px}
+.card-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;margin-top:5px}
+.team .card-actions .btn{width:100%;min-width:0;min-height:49px;padding:9px 3px;font-size:clamp(11px,1.65vw,14px);white-space:nowrap;font-weight:800}
+.team .card-actions .card-yellow{border:1px solid #d4ad55;background:#322b15;color:#ffe08b}
+.team .card-actions .card-red{border:1px solid #e76b79;background:#461e25;color:#ffe9ed}
+.red-title{margin-top:20px;padding-top:17px;border-top:1px solid #56656a;color:#ffa1ab}
+.red-event{border-left:4px solid #fa5766}
+.red-badge{background:#ef4759;color:white;margin-right:6px}
+.red-confirm{background:#dc4050!important;border-color:#dc4050!important;color:white!important}
+.preview-actions{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+.preview-actions .btn{flex:1 1 110px}
+.whatsapp-preview strong{font-weight:850;color:#ffffff}
+.whatsapp-preview{margin:0;border-radius:12px;border:1px solid #3c6457;padding:16px;background:linear-gradient(135deg,#0c2a24,#111e20);color:#f5fcf8;font:14px/1.62 system-ui,-apple-system,Segoe UI,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere;max-height:510px;overflow:auto;user-select:text}
+.summary-head{display:flex;justify-content:space-between}
+@media(max-width:620px){
+ .float-inner{grid-template-columns:47px minmax(0,1fr) 77px;padding:5px 6px;gap:5px}
+ .float-extra{min-width:0;font-size:clamp(19px,5.2vw,24px);padding:6px 3px;gap:1px}
+ .float-clock{font-size:clamp(27px,8vw,36px)}
+ .float-main{gap:5px}
+ .float-period{font-size:9px}
+ .team .scoreline{grid-template-columns:46px minmax(0,1fr);gap:6px;max-width:none;margin:4px auto 8px}
+ .team .scoreline .adjust-link{width:46px;height:52px;min-height:52px;font-size:29px}
+ .team .scoreline .g-action{height:54px;min-height:54px}
+ .match-fouls .statbuttons .btn:not(.f-action){flex:0 0 46px;min-width:46px;min-height:52px;font-size:29px;padding:3px}
+ .match-fouls .statbuttons .f-action{min-height:52px;font-size:clamp(10px,2.7vw,13px);padding:6px 2px}
+ .team .card-actions .btn{min-height:47px;font-size:clamp(10px,2.9vw,13px);padding:9px 1px}
+ .whatsapp-preview{padding:12px;font-size:13px;max-height:none;overflow:visible}
+}
+@media(max-width:350px){
+ .float-inner{grid-template-columns:44px minmax(0,1fr) 67px;gap:3px}
+ .float-clock{font-size:27px}
+ .float-period{font-size:8px}
+ .float-extra{font-size:18px}
+ .match-fouls .statbuttons .btn:not(.f-action){flex-basis:43px;min-width:43px}
+ .team .scoreline{grid-template-columns:43px minmax(0,1fr)}
+ .team .scoreline .adjust-link{width:43px}
+}
+
 </style>
 </head>
 <body>
+<aside id="floatingTimer" class="float-timer" aria-label="Cronómetro flotante" aria-hidden="true">
+  <div class="float-inner">
+    <button id="floatingPause" class="float-control" type="button" aria-label="Pausar o reanudar cronómetro">▶</button>
+    <div class="float-main"><div class="float-clock" id="floatingClock">00:00</div><div class="float-period" id="floatingPeriod">1.er tiempo</div></div>
+    <div id="floatingExtra" class="float-extra" aria-label="Marcador actual"><span id="floatingHomeScore">0</span><span class="score-dash">–</span><span id="floatingAwayScore">0</span></div>
+  </div>
+</aside>
+
 <div class="app">
   <header class="top">
-    <div><div class="brand">⚽ Marcador de Futbolito</div><div class="tag">Propuesta B · Cronómetro protagonista</div></div>
+    <div><div class="brand">⚽ Marcador de Futbolito</div><div class="tag">Modo árbitro · Control seguro</div></div>
     <div class="top-actions"><span class="pill">2 tiempos · duración editable</span><button class="iconbtn whatsapp" id="shareBtn" aria-label="Compartir resumen por WhatsApp" title="Compartir por WhatsApp">↗</button></div>
   </header>
-
-  <section class="panel">
-    <h2 class="section-title">Equipos del partido</h2>
-    <div class="setup">
-      <div class="field"><label for="homeTeam">Equipo local</label><select id="homeTeam"><option>Mala Clase +30</option><option>Mala Clase TC</option></select></div>
-      <div class="field"><label for="awayName">Equipo rival</label><input id="awayName" value="Rival" maxlength="32"></div>
-    </div>
-    <div class="roster-tools"><button class="btn" id="manageTeamsBtn">⚙ Administrar equipos y jugadores</button></div>
-  </section>
 
   <section class="panel timer">
     <div class="period" id="periodLabel">PRIMER TIEMPO</div>
@@ -50,43 +221,64 @@ dialog{background:#141f31;color:var(--text);border:1px solid var(--line);border-
       <button class="btn subtle" id="resetBtn">↻ Reiniciar partido</button>
     </div>
   </section>
-
-  <section class="scoreboard">
+<section class="scoreboard">
     <div class="team home">
       <div class="teamname" id="homeLabel">Mala Clase +30</div>
       <div class="team-sub">LOCAL</div>
-      <div class="scoreline"><button class="scorebtn" id="homeMinus" aria-label="Restar gol local">−</button><div class="score" id="homeScore">0</div><button class="scorebtn plus" id="homePlus" aria-label="Sumar gol local">+</button></div>
-      <button class="btn" id="yellowBtn">🟨 Amarilla local</button>
+      <div class="scoreline"><button class="scorebtn adjust-link" id="homeMinus" aria-label="Corregir: restar un gol local">−</button><div class="score" id="homeScore">0</div><button class="scorebtn plus g-action" id="homePlus" aria-label="Registrar GOL local">⚽ GOL</button></div>
+      <div class="card-actions"><button class="btn card-yellow" id="yellowBtn" aria-label="Registrar tarjeta amarilla local">🟨 Amarilla</button><button class="btn card-red" id="redBtn" aria-label="Registrar tarjeta roja local">🟥 Roja</button></div>
     </div>
     <div class="team away">
       <div class="teamname" id="awayLabel">Rival</div>
       <div class="team-sub">VISITA</div>
-      <div class="scoreline"><button class="scorebtn" id="awayMinus" aria-label="Restar gol visita">−</button><div class="score" id="awayScore">0</div><button class="scorebtn plus" id="awayPlus" aria-label="Sumar gol visita">+</button></div>
-      <button class="btn" id="awayYellowBtn">🟨 Amarilla visitante</button>
+      <div class="scoreline"><button class="scorebtn adjust-link" id="awayMinus" aria-label="Corregir: restar un gol visitante">−</button><div class="score" id="awayScore">0</div><button class="scorebtn plus g-action" id="awayPlus" aria-label="Registrar GOL visitante">⚽ GOL</button></div>
+      <div class="card-actions"><button class="btn card-yellow" id="awayYellowBtn" aria-label="Registrar tarjeta amarilla visitante">🟨 Amarilla</button><button class="btn card-red" id="awayRedBtn" aria-label="Registrar tarjeta roja visitante">🟥 Roja</button></div>
     </div>
   </section>
-
-  <section class="panel" style="margin-top:14px">
-    <h2 class="section-title">Conteo de faltas</h2>
+<div id="lastAction" class="last-action hidden" role="status" aria-live="polite"><span id="lastActionText"></span><button type="button" id="undoAction">↶ Deshacer</button></div>
+<section class="panel match-fouls">
+    <h2 class="section-title">Control de faltas</h2>
     <div class="stats">
-      <div class="statbox"><div class="stathead"><span id="homeFoulLabel">Mala Clase +30</span><span>🟢</span></div><div class="statcount" id="homeFouls">0</div><div class="statbuttons"><button class="btn" id="homeFoulMinus" aria-label="Restar falta local">−</button><button class="btn" id="homeFoulPlus" aria-label="Sumar falta local">+</button></div><div class="note">Tiempo actual: <b id="homePeriodFouls">0</b> · Acumulado: <b id="homeTotalFouls">0</b></div></div>
-      <div class="statbox"><div class="stathead"><span id="awayFoulLabel">Rival</span><span>🔵</span></div><div class="statcount" id="awayFouls">0</div><div class="statbuttons"><button class="btn" id="awayFoulMinus" aria-label="Restar falta visita">−</button><button class="btn" id="awayFoulPlus" aria-label="Sumar falta visita">+</button></div><div class="note">Tiempo actual: <b id="awayPeriodFouls">0</b> · Acumulado: <b id="awayTotalFouls">0</b></div></div>
+      <div class="statbox"><div class="stathead"><span id="homeFoulLabel">Mala Clase +30</span><span>🟢</span></div><div class="statcount" id="homeFouls">0</div><div class="statbuttons"><button class="btn" id="homeFoulMinus" aria-label="Restar falta local">−</button><button class="btn f-action" id="homeFoulPlus" aria-label="Sumar falta local">+ FALTA</button></div><div class="note">Tiempo actual: <b id="homePeriodFouls">0</b> · Acumulado: <b id="homeTotalFouls">0</b></div></div>
+      <div class="statbox"><div class="stathead"><span id="awayFoulLabel">Rival</span><span>🔵</span></div><div class="statcount" id="awayFouls">0</div><div class="statbuttons"><button class="btn" id="awayFoulMinus" aria-label="Restar falta visita">−</button><button class="btn f-action" id="awayFoulPlus" aria-label="Sumar falta visitante">+ FALTA</button></div><div class="note">Tiempo actual: <b id="awayPeriodFouls">0</b> · Acumulado: <b id="awayTotalFouls">0</b></div></div>
     </div>
     <div class="note">Al pasar al segundo tiempo, las faltas del tiempo actual vuelven a cero; el acumulado del partido se conserva.</div>
   </section>
-
-  <section class="panel">
+<details class="history-fold"><summary>🟨🟥 Ver tarjetas y sanciones</summary>
+<section class="panel">
+    <h2 class="section-title">Tarjetas amarillas y sanciones</h2>
+    <div class="yellow-list" id="yellowList"><div class="empty">Aún no hay amarillas registradas.</div></div>
+    <div class="note">Las amarillas muestran el minuto de registro y su sanción de 2 minutos.</div>
+    <h2 class="section-title red-title">🟥 Tarjetas rojas</h2>
+    <div class="yellow-list" id="redList"><div class="empty">Aún no hay expulsiones registradas.</div></div>
+    <div class="note">Las rojas guardan jugador, equipo y minuto; no tienen cuenta regresiva.</div>
+  </section>
+</details>
+<details class="history-fold"><summary>⚽ Ver historial de goles</summary>
+<section class="panel">
     <h2 class="section-title">Goles del partido</h2>
     <div class="yellow-list" id="goalList"><div class="empty">Aún no hay goles registrados.</div></div>
     <div class="note">Al sumar un gol podrás elegir al autor o dejarlo sin identificar.</div>
   </section>
-
-  <section class="panel">
-    <h2 class="section-title">Tarjetas amarillas y sanciones</h2>
-    <div class="yellow-list" id="yellowList"><div class="empty">Aún no hay amarillas registradas.</div></div>
-    <div class="note">Cada amarilla inicia una cuenta de tiempo transcurrido y una sanción de 2 minutos. El prototipo muestra el tiempo restante de sanción.</div>
+</details>
+<details class="history-fold" id="summaryFold"><summary>📲 Vista previa de resumen WhatsApp</summary>
+<section class="panel">
+  <div class="summary-head"><div><strong>Así se verá el mensaje</strong><div class="note">El ejemplo es ficticio y no cambia el marcador actual.</div></div></div>
+  <div class="preview-actions"><button class="btn gold" id="showExampleBtn" type="button">Ejemplo 8–2</button><button class="btn" id="showCurrentBtn" type="button">Mi partido</button><button class="btn" id="copyPreviewBtn" type="button">⧉ Copiar</button></div>
+  <pre class="whatsapp-preview" id="summaryPreview" aria-live="polite"></pre>
+</section>
+</details>
+<details class="config-fold"><summary>⚙ Configurar equipos y plantillas</summary>
+<section class="panel">
+    <h2 class="section-title">Equipos del partido</h2>
+    <div class="setup">
+      <div class="field"><label for="homeTeam">Equipo local</label><select id="homeTeam"><option>Mala Clase +30</option><option>Mala Clase TC</option></select></div>
+      <div class="field"><label for="awayName">Equipo rival</label><input id="awayName" value="Rival" maxlength="32"></div>
+    </div>
+    <div class="roster-tools"><button class="btn" id="manageTeamsBtn">⚙ Administrar equipos y jugadores</button></div>
   </section>
-  <div class="footer">Borrador para revisión · Los datos se guardan en este navegador. Antes de usarlo en partidos oficiales, prueba las funciones y revisa el flujo.</div>
+</details>
+  <div class="footer">Modo árbitro · Los datos se guardan en este navegador. No modifica la web publicada.</div>
 </div>
 
 <dialog id="goalDialog">
@@ -98,11 +290,11 @@ dialog{background:#141f31;color:var(--text);border:1px solid var(--line);border-
 </dialog>
 
 <dialog id="yellowDialog">
-  <div class="modal-head"><h2>Registrar tarjeta amarilla</h2><button class="close" data-close="yellowDialog">✕</button></div>
+  <div class="modal-head"><h2 id="cardDialogTitle">Registrar tarjeta amarilla</h2><button class="close" data-close="yellowDialog">✕</button></div>
   <div class="field"><label for="yellowTeam">Equipo</label><select id="yellowTeam"><option value="home">Equipo local</option><option value="away">Equipo visitante</option></select></div>
   <div class="field" id="homePlayerField" style="margin-top:10px"><label for="playerSelect">Jugador local</label><select id="playerSelect"></select></div>
   <div class="field" id="manualPlayerField" style="margin-top:10px"><label for="manualPlayer">Nombre o número de camiseta</label><input id="manualPlayer" placeholder="Ej.: camiseta 7 o #7"></div>
-  <div class="note">Se guardará el minuto del partido, el tiempo transcurrido desde la amarilla y la sanción de 2 minutos.</div>
+  <div class="note" id="cardDialogHint">Se guardará el minuto del partido y la sanción de 2 minutos.</div>
   <div class="actions"><button class="btn primary" id="confirmYellow">Confirmar amarilla · 2 min</button></div>
 </dialog>
 
@@ -125,11 +317,11 @@ const DEFAULT_TEAMS = {
 const $=id=>document.getElementById(id);
 let state = {
   teams: JSON.parse(JSON.stringify(DEFAULT_TEAMS)), period:1, elapsed:0, running:false, startedAt:0,
-  scores:[0,0], periodFouls:[0,0], totalFouls:[0,0], cards:[], goals:[], awayName:"Rival", homeTeam:"Mala Clase +30", halfMinutes:25
+  scores:[0,0], periodFouls:[0,0], totalFouls:[0,0], cards:[], redCards:[], goals:[], awayName:"Rival", homeTeam:"Mala Clase +30", halfMinutes:25
 };
 let interval=null;
-function save(){try{state.homeTeam=$("homeTeam")?.value||state.homeTeam;state.halfMinutes=Number($("halfMinutes")?.value)||25;localStorage.setItem("marcadorFutbolitoDraft",JSON.stringify({...state,running:false,startedAt:0}));}catch(e){}}
-function load(){try{const raw=localStorage.getItem("marcadorFutbolitoDraft");if(raw){const s=JSON.parse(raw);state={...state,...s,running:false,startedAt:0,teams:s.teams||JSON.parse(JSON.stringify(DEFAULT_TEAMS)),goals:s.goals||[],homeTeam:s.homeTeam||"Mala Clase +30",halfMinutes:s.halfMinutes||25};}}catch(e){}}
+function save(){try{state.homeTeam=$("homeTeam")?.value||state.homeTeam;state.halfMinutes=Number($("halfMinutes")?.value)||25;localStorage.setItem("marcadorFutbolitoArbitroNuevo3",JSON.stringify({...state,running:false,startedAt:0}));}catch(e){}}
+function load(){try{const raw=localStorage.getItem("marcadorFutbolitoArbitroNuevo3")||localStorage.getItem("marcadorFutbolitoPreview3")||localStorage.getItem("marcadorFutbolitoDraft");if(raw){const s=JSON.parse(raw);state={...state,...s,running:false,startedAt:0,teams:s.teams||JSON.parse(JSON.stringify(DEFAULT_TEAMS)),goals:s.goals||[],redCards:s.redCards||[],homeTeam:s.homeTeam||"Mala Clase +30",halfMinutes:s.halfMinutes||25};}}catch(e){}}
 function halfSeconds(){return Math.max(1,Math.min(90,Number($("halfMinutes").value)||25))*60;}
 function teamName(){return $("homeTeam").value;}
 function fmt(sec){sec=Math.max(0,Math.floor(sec));return String(Math.floor(sec/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0");}
@@ -142,7 +334,7 @@ function renderGoals(){
  state.goals.forEach((g,i)=>{
    const row=document.createElement("div");row.className="yellow-card";
    const info=document.createElement("div");
-   const title=document.createElement("div");title.className="who";title.textContent=(g.team==="home"?teamName():($("awayName").value.trim()||"Rival"))+" · "+(g.scorer||"Autor no registrado")+(g.ownGoal?" · AUTOGOL":"");
+   const title=document.createElement("div");title.className="who";title.textContent=(g.team==="home"?(teamName()+" · "+(g.scorer||"Autor no registrado")):(($("awayName").value.trim()||"Rival")+" · Gol"))+(g.ownGoal?" · AUTOGOL":"");
    const sub=document.createElement("small");sub.textContent=(g.period===1?"Primer tiempo":g.period===2?"Segundo tiempo":"Partido")+", "+fmt(g.elapsedAt)+" · Gol #"+(i+1);
    info.append(title,sub);
    const del=document.createElement("button");del.className="btn danger";del.textContent="Quitar";del.onclick=()=>{state.scores[g.teamIndex]=Math.max(0,state.scores[g.teamIndex]-1);state.goals.splice(i,1);render();};
@@ -167,6 +359,21 @@ function renderCards(){
    row.append(info,del);list.appendChild(row);
  });
 }
+function renderRedCards(){
+ const list=$("redList");
+ if(!state.redCards.length){list.innerHTML='<div class="empty">Aún no hay expulsiones registradas.</div>';return;}
+ list.innerHTML="";
+ state.redCards.forEach((c,i)=>{
+  const row=document.createElement("div");row.className="yellow-card red-event";
+  const info=document.createElement("div");
+  const badge=document.createElement("span");badge.className="card-badge red-badge";badge.textContent="ROJA";
+  const name=document.createElement("div");name.className="who";name.textContent=c.player+" · "+c.teamName;
+  const sub=document.createElement("small");sub.textContent=(c.period===1?"Primer":"Segundo")+" tiempo · Minuto "+c.minute+"' ("+fmt(c.matchElapsed)+") · Expulsión";
+  info.append(badge,name,sub);
+  const del=document.createElement("button");del.className="btn danger";del.textContent="Quitar";del.setAttribute("aria-label","Eliminar tarjeta roja de "+c.player);del.onclick=()=>{state.redCards.splice(i,1);render();};
+  row.append(info,del);list.appendChild(row);
+ });
+}
 function render(){
  names();
  $("clock").textContent=fmt(state.elapsed);
@@ -181,7 +388,7 @@ function render(){
  $("homeFouls").textContent=state.periodFouls[0];$("awayFouls").textContent=state.periodFouls[1];
  $("homePeriodFouls").textContent=state.periodFouls[0];$("awayPeriodFouls").textContent=state.periodFouls[1];
  $("homeTotalFouls").textContent=state.totalFouls[0];$("awayTotalFouls").textContent=state.totalFouls[1];
- renderGoals();renderCards();save();
+ renderGoals();renderCards();renderRedCards();save();
 }
 function stop(){if(state.running)state.elapsed=Math.min(halfSeconds(),Math.floor((Date.now()-state.startedAt)/1000));state.running=false;if(interval){clearInterval(interval);interval=null;}render();}
 function tick(){
@@ -193,7 +400,7 @@ function tick(){
 $("toggleBtn").onclick=()=>{
  if(state.running){stop();return;}
  if(state.period>2||state.elapsed>=halfSeconds())return;
- state.running=true;state.startedAt=Date.now()-state.elapsed*1000;interval=setInterval(tick,500);render();
+ state.running=true;state.startedAt=Date.now()-state.elapsed*1000;interval=setInterval(tick,1000);render();
 };
 $("periodBtn").onclick=()=>{
  stop();
@@ -202,8 +409,8 @@ $("periodBtn").onclick=()=>{
  render();
 };
 $("resetBtn").onclick=()=>{
- if(!confirm("¿Reiniciar el partido completo? Se borrarán marcador, faltas y amarillas."))return;
- stop();state.period=1;state.elapsed=0;state.scores=[0,0];state.periodFouls=[0,0];state.totalFouls=[0,0];state.cards=[];state.goals=[];render();
+ if(!confirm("¿Reiniciar el partido completo? Se borrarán goles, faltas, tarjetas amarillas y rojas. Los equipos y jugadores se conservarán."))return;
+ stop();state.period=1;state.elapsed=0;state.scores=[0,0];state.periodFouls=[0,0];state.totalFouls=[0,0];state.cards=[];state.redCards=[];state.goals=[];render();
 };
 let goalTarget=0;
 function addGoal(teamIndex,scorer="",ownGoal=false){
@@ -220,11 +427,11 @@ function openGoal(teamIndex){
  $("goalManualScorer").value="";
  populateGoalScorer();
  $("goalScorer").value="__none__";
- $("goalWithoutScorer").textContent="No registrar autor";
+ // La opción sin autor ya viene seleccionada por defecto.
  $("goalDialog").showModal();
 }
 $("homePlus").onclick=()=>openGoal(0);
-$("awayPlus").onclick=()=>openGoal(1);
+$("awayPlus").onclick=()=>addGoal(1,"",false); // El rival suma el gol directamente, sin preguntar autor.
 $("confirmGoal").onclick=()=>{
  const manual=$("goalManualScorer").value.trim();
  const selected=$("goalScorer").value;
@@ -234,7 +441,7 @@ $("confirmGoal").onclick=()=>{
 $("ownGoalBtn").onclick=()=>{addGoal(goalTarget,"Autogol",true);$("goalDialog").close();};
 $("homeMinus").onclick=()=>{state.scores[0]=Math.max(0,state.scores[0]-1);const idx=state.goals.map((g,i)=>g.teamIndex===0?i:-1).filter(i=>i>=0).pop();if(idx!==undefined)state.goals.splice(idx,1);render();};
 $("awayMinus").onclick=()=>{state.scores[1]=Math.max(0,state.scores[1]-1);const idx=state.goals.map((g,i)=>g.teamIndex===1?i:-1).filter(i=>i>=0).pop();if(idx!==undefined)state.goals.splice(idx,1);render();};
-[["homeFoulPlus",0,1],["homeFoulMinus",0,-1],["awayFoulPlus",1,1],["awayFoulMinus",1,-1]].forEach(([id,i,d])=>$(id).onclick=()=>{state.periodFouls[i]=Math.max(0,state.periodFouls[i]+d);state.totalFouls[i]=Math.max(0,state.totalFouls[i]+d);render();});
+[["homeFoulPlus",0,1],["homeFoulMinus",0,-1],["awayFoulPlus",1,1],["awayFoulMinus",1,-1]].forEach(([id,i,d])=>$(id).onclick=()=>{if(d<0&&state.periodFouls[i]===0)return;state.periodFouls[i]=Math.max(0,state.periodFouls[i]+d);state.totalFouls[i]=Math.max(0,state.totalFouls[i]+d);render();});
 $("homeTeam").onchange=()=>{populatePlayerSelect();$("editTeamSelect").value=teamName();render();};
 $("awayName").addEventListener("input",render);
 $("halfMinutes").addEventListener("change",()=>{if(state.elapsed>halfSeconds())state.elapsed=halfSeconds();render();});
@@ -260,7 +467,13 @@ function populateGoalScorer(){
  if(goalTarget===1)return;
  (state.teams[teamName()]||[]).forEach(([num,name])=>{const o=document.createElement("option");o.value="#"+num+" "+name;o.textContent="#"+num+" · "+name;sel.appendChild(o);});
 }
-function openYellow(team){
+let cardKind="yellow";
+function openYellow(team,kind="yellow"){
+ cardKind=kind;
+ $("cardDialogTitle").textContent=kind==="red"?"🟥 Registrar tarjeta roja":"🟨 Registrar tarjeta amarilla";
+ $("cardDialogHint").textContent=kind==="red"?"Se guardará el jugador y el minuto de expulsión. Sin temporizador.":"Se guardará el minuto de la amarilla y su sanción de 2 minutos.";
+ $("confirmYellow").textContent=kind==="red"?"🟥 Confirmar roja":"🟨 Confirmar amarilla · 2 min";
+ $("confirmYellow").classList.toggle("red-confirm",kind==="red");
  $("yellowTeam").value=team;
  $("manualPlayer").value="";
  populatePlayerSelect();
@@ -273,22 +486,37 @@ function updateYellowFields(){
  $("manualPlayerField").querySelector("label").textContent=isHome?"Nombre o número (opcional si seleccionas jugador)":"Número o nombre de jugador visitante (obligatorio)";
  $("manualPlayer").placeholder=isHome?"Ej.: #7 Money":"Ej.: #7 o Nombre";
 }
-$("yellowBtn").onclick=()=>openYellow("home");
-$("awayYellowBtn").onclick=()=>openYellow("away");
+$("yellowBtn").onclick=()=>openYellow("home","yellow");
+$("awayYellowBtn").onclick=()=>openYellow("away","yellow");
+$("redBtn").onclick=()=>openYellow("home","red");
+$("awayRedBtn").onclick=()=>openYellow("away","red");
 $("yellowTeam").onchange=updateYellowFields;
 $("confirmYellow").onclick=()=>{
  const team=$("yellowTeam").value;
  const manual=$("manualPlayer").value.trim();
  let player="";
  if(team==="home") player=manual||$("playerSelect").value;
- else player=manual?(/^(#|camiseta\\s*)/i.test(manual)?manual:"Camiseta #"+manual):"";
+ else player=manual?(/^\d+$/.test(manual)?"Camiseta #"+manual:manual):"";
  if(!player){alert(team==="away"?"Ingresa el número o nombre del jugador visitante.":"Selecciona un jugador o ingresa su nombre/número.");return;}
  const matchElapsed=state.elapsed;
- state.cards.push({player,team,teamName:team==="home"?teamName():($("awayName").value.trim()||"Rival"),createdAt:Date.now(),period:state.period,matchElapsed,minute:eventMinute(matchElapsed)});
+ const record={player,team,teamName:team==="home"?teamName():($("awayName").value.trim()||"Rival"),createdAt:Date.now(),period:state.period,matchElapsed,minute:eventMinute(matchElapsed)};
+ const isRed=cardKind==="red";
+ const targetList=isRed?state.redCards:state.cards;
+ targetList.push(record);
  $("yellowDialog").close();render();
+ setLastAction((isRed?"🟥 Roja":"🟨 Amarilla")+" registrada para "+record.player+".",()=>{
+  const index=targetList.indexOf(record);
+  if(index>=0)targetList.splice(index,1);
+  render();
+ });
 };
 $("manageTeamsBtn").onclick=()=>{populateTeamSelectors(teamName(),teamName());renderRosterEditor();$("teamsDialog").showModal();};
 $("editTeamSelect").onchange=renderRosterEditor;
+$("rosterList").addEventListener("input",()=>{
+ const key=$("editTeamSelect").value;
+ state.teams[key]=[...$("rosterList").children].map(row=>[row._num.value.trim(),row._name.value.trim()]).filter(p=>p[1]);
+ save();
+});
 function renderRosterEditor(){
  const list=$("rosterList");list.innerHTML="";
  (state.teams[$("editTeamSelect").value]||[]).forEach((p,i)=>{
@@ -328,14 +556,98 @@ $("saveRosterBtn").onclick=()=>{
  save();populatePlayerSelect();$("teamsDialog").close();render();
 };
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>$(b.dataset.close).close());
-$("shareBtn").onclick=()=>{
- const home=teamName(),away=$("awayName").value.trim()||"Rival";
- const goals=state.goals.length?state.goals.map((g,i)=>"- "+(g.team==="home"?home:away)+": "+(g.scorer||"autor no registrado")+" ("+(g.period===1?"1T":"2T")+", "+fmt(g.elapsedAt)+")").join("\n"):"No hay goles con autor registrados";
- const cards=state.cards.length?state.cards.map(c=>"- "+c.teamName+": "+c.player+" — "+(c.period===1?"1T":"2T")+", minuto "+c.minute+"' — sanción de 2 min").join("\n"):"Sin amarillas registradas";
- const period=state.period===1?"Primer tiempo":state.period===2?"Segundo tiempo":"Partido finalizado";
- const message="⚽ RESUMEN DEL PARTIDO\n"+home+" "+state.scores[0]+" - "+state.scores[1]+" "+away+"\n🕒 "+period+" · "+fmt(state.elapsed)+"\n\n⚽ GOLES:\n"+goals+"\n\n🚩 Faltas acumuladas: "+home+" "+state.totalFouls[0]+" - "+state.totalFouls[1]+" "+away+"\n\n🟨 AMARILLAS:\n"+cards+"\n\nMarcador de Futbolito";
- window.open("https://wa.me/?text="+encodeURIComponent(message),"_blank","noopener");
+// Un solo formato para la vista previa, el ejemplo y el WhatsApp real.
+function formatMatchSummary(m){
+ const home=m.homeName,away=m.awayName,half=Number(m.halfMinutes)||25;
+ const goals=m.goals||[], yellows=m.cards||[], reds=m.redCards||[];
+ const final=m.period===3;
+ const header=(final?'🏆 *RESULTADO FINAL*':'⚽ *RESUMEN DEL PARTIDO*')+'\n'
+  +'*'+home+' '+m.scores[0]+' – '+m.scores[1]+' '+away+'*\n'
+  +'⏱️ '+(final?'Partido finalizado':m.period===1?'Primer tiempo':'Segundo tiempo')
+  +' · 2 × '+half+' min'+(final?' ('+(half*2)+' min)':' · reloj '+fmt(m.elapsed||0));
+ const eventStamp=(e)=>{
+  const halfMinute=eventMinute(e.elapsedAt??e.matchElapsed??0);
+  const fullMinute=(e.period===2?half:0)+halfMinute;
+  return String(fullMinute).padStart(2,'0')+"' ("+(e.period===2?'2T':'1T')+' '+String(halfMinute).padStart(2,'0')+"')";
+ };
+ const dots=(t)=>t==='home'?'🟢':'🔵';
+ const goalLines=[];
+ [1,2].forEach(period=>{
+  const part=goals.filter(g=>g.period===period).sort((a,b)=>a.elapsedAt-b.elapsedAt);
+  if(part.length===0)return;
+  const hs=part.filter(g=>g.team==='home').length,as=part.filter(g=>g.team==='away').length;
+  goalLines.push('*'+(period===1?'1.er tiempo':'2.º tiempo')+' · '+hs+'–'+as+'*');
+  part.forEach(g=>{
+   let who=g.ownGoal?'Autogol':g.team==='home'?(g.scorer||'Autor no registrado'):'Gol visitante';
+   goalLines.push(eventStamp(g)+' '+dots(g.team)+' '+who);
+  });
+ });
+ const cardsText=(list,type)=>list.length
+  ?list.slice().sort((a,b)=>((a.period-1)*half+a.matchElapsed/60)-((b.period-1)*half+b.matchElapsed/60))
+   .map(c=>eventStamp(c)+' '+dots(c.team)+' '+c.player+(type==='yellow'?' · 2 min':'')).join('\n')
+  :'Ninguna';
+ let first,second;
+ if(m.foulsByPeriod){[first,second]=m.foulsByPeriod;}
+ else if(m.period===1){first=[...m.periodFouls];second=[0,0];}
+ else {second=[...m.periodFouls];first=m.totalFouls.map((n,i)=>Math.max(0,n-second[i]));}
+ return header+'\n\n'
+  +'⚽ *GOLES ('+goals.length+')*\n'+(goalLines.join('\n')||'Sin goles registrados')+'\n\n'
+  +'🟨 *AMARILLAS ('+yellows.length+')*\n'+cardsText(yellows,'yellow')+'\n\n'
+  +'🟥 *ROJAS ('+reds.length+')*\n'+cardsText(reds,'red')+'\n\n'
+  +'🚩 *FALTAS*\n'
+  +'1T: '+home+' '+first[0]+' · '+away+' '+first[1]+'\n'
+  +'2T: '+home+' '+second[0]+' · '+away+' '+second[1]+'\n'
+  +'*TOTAL: '+m.totalFouls[0]+'–'+m.totalFouls[1]+'*\n\n'
+  +'📋 Marcador de Futbolito';
+}
+function currentSummary(){
+ return formatMatchSummary({...state,homeName:teamName(),awayName:$("awayName").value.trim()||"Rival",halfMinutes:Number($("halfMinutes").value)||25});
+}
+const exampleMatch={
+ homeName:"Mala Clase +30",awayName:"Rival",halfMinutes:25,period:3,elapsed:0,
+ scores:[8,2],totalFouls:[9,13],foulsByPeriod:[[5,7],[4,6]],
+ goals:[
+  [1,3,0,"#9 Paine"],[1,7,0,"#10 Pipo"],[1,11,1,""],
+  [1,15,0,"#7 Juanfran"],[1,21,0,"#13 Basti"],
+  [2,4,0,"#9 Paine"],[2,9,0,"#10 Pipo"],[2,12,1,""],
+  [2,17,0,"#3 Pipe"],[2,23,0,"Autogol"]
+ ].map(([period,min,teamIndex,scorer])=>({period,elapsedAt:min*60,team:teamIndex?'away':'home',teamIndex,scorer,ownGoal:scorer==="Autogol"})),
+ cards:[
+  [1,8,'home','#8 Beto'],[1,19,'away','#6'],
+  [2,6,'home','#10 Pipo'],[2,18,'away','#3']
+ ].map(([period,min,team,player])=>({period,matchElapsed:min*60,team,player})),
+ redCards:[[2,20,'home','#4 Jaime']].map(([period,min,team,player])=>({period,matchElapsed:min*60,team,player}))
 };
+let previewMode='example';
+let previewText='';
+function renderFormattedPreview(source){
+ const display=$("summaryPreview");
+ display.replaceChildren();
+ source.split(/(\*[^*\n]+\*)/g).forEach(part=>{
+  if(part.startsWith('*')&&part.endsWith('*')&&part.length>2){
+   const strong=document.createElement('strong');strong.textContent=part.slice(1,-1);display.appendChild(strong);
+  }else if(part)display.appendChild(document.createTextNode(part));
+ });
+}
+function updatePreview(){
+ previewText=previewMode==='example'?formatMatchSummary(exampleMatch):currentSummary();
+ renderFormattedPreview(previewText);
+ $("showExampleBtn").classList.toggle('gold',previewMode==='example');
+ $("showCurrentBtn").classList.toggle('gold',previewMode==='current');
+}
+$("showExampleBtn").onclick=()=>{previewMode='example';updatePreview();};
+$("showCurrentBtn").onclick=()=>{previewMode='current';updatePreview();};
+$("summaryFold").addEventListener('toggle',()=>{if($("summaryFold").open)updatePreview();});
+$("copyPreviewBtn").onclick=async()=>{
+ const txt=previewText;
+ try{await navigator.clipboard.writeText(txt);$("copyPreviewBtn").textContent='✓ Copiado';setTimeout(()=>$("copyPreviewBtn").textContent='⧉ Copiar',1800);}
+ catch(e){alert('El navegador no permitió copiar automáticamente. Selecciona el texto del resumen para copiarlo.');}
+};
+$("shareBtn").onclick=()=>{
+ const message=currentSummary();
+ window.open('https://wa.me/?text='+encodeURIComponent(message),'_blank','noopener');
+};
+
 load();
 populateTeamSelectors(state.homeTeam||"Mala Clase +30",state.homeTeam||"Mala Clase +30");
 $("homeTeam").value=state.teams[state.homeTeam]?state.homeTeam:Object.keys(state.teams)[0];
@@ -343,6 +655,83 @@ $("awayName").value=state.awayName||"Rival";
 $("halfMinutes").value=state.halfMinutes||25;
 populatePlayerSelect();render();
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&state.running)tick();});
+
+let actionUndo=null;
+function setLastAction(message,undo){
+ actionUndo=undo;
+ document.getElementById('lastActionText').textContent=message;
+ document.getElementById('lastAction').classList.remove('hidden');
+}
+document.getElementById('undoAction').addEventListener('click',()=>{
+ if(!actionUndo)return;
+ const action=actionUndo;
+ actionUndo=null;
+ document.getElementById('lastAction').classList.add('hidden');
+ action();
+});
+// Intercepta registros; no interfiere con los historiales ni las amarillas.
+const originalAddGoal=addGoal;
+addGoal=function(teamIndex,scorer='',ownGoal=false){
+ const previousScore=state.scores[teamIndex];
+ const previousSize=state.goals.length;
+ originalAddGoal(teamIndex,scorer,ownGoal);
+ const record=state.goals[state.goals.length-1];
+ setLastAction('⚽ Gol registrado para '+(teamIndex===0?teamName():($('awayName').value||'Rival'))+'.',()=>{
+   const idx=state.goals.indexOf(record);
+   if(idx>=0){state.goals.splice(idx,1);state.scores[teamIndex]=Math.max(0,state.scores[teamIndex]-1);}
+   render();
+ });
+};
+['homeFoulPlus','awayFoulPlus'].forEach((id,teamIndex)=>{
+ const btn=document.getElementById(id);
+ const old=btn.onclick;
+ btn.onclick=(event)=>{
+   old(event);
+   const period=state.period;
+   setLastAction('🚩 Falta registrada para '+(teamIndex===0?teamName():($('awayName').value||'Rival'))+'.',()=>{
+      if(state.period===period && state.periodFouls[teamIndex]>0){
+        state.periodFouls[teamIndex]--;
+        state.totalFouls[teamIndex]=Math.max(0,state.totalFouls[teamIndex]-1);
+      }
+      render();
+   });
+ };
+});
+const oldReset=document.getElementById('resetBtn').onclick;
+document.getElementById('resetBtn').onclick=(e)=>{oldReset(e);actionUndo=null;document.getElementById('lastAction').classList.add('hidden')};
+
+
+// Cronómetro flotante: un control alternativo para el mismo reloj, nunca un segundo reloj.
+(function(){
+ const mini=document.getElementById('floatingTimer');
+ const big=document.querySelector('.timer');
+ const btn=document.getElementById('floatingPause');
+ btn.addEventListener('click',()=>document.getElementById('toggleBtn').click());
+ function visible(){
+   const below=big.getBoundingClientRect().bottom<4;
+   mini.classList.toggle('shown',below);
+   mini.setAttribute('aria-hidden',String(!below));
+   btn.tabIndex=below?0:-1;
+ }
+ window.addEventListener('scroll',visible,{passive:true});
+ window.addEventListener('resize',visible,{passive:true});
+ window.updateFloating=visible;
+ visible();
+})();
+const _renderMain=render;
+render=function(){
+ _renderMain();
+ $('floatingClock').textContent=fmt(state.elapsed);
+ $('floatingClock').classList.toggle('active',state.running);
+ $('floatingPeriod').textContent=state.period===1?'1.er tiempo':state.period===2?'2.º tiempo':'Finalizado';
+ $('floatingPause').textContent=state.running?'Ⅱ':'▶';
+ $('floatingPause').setAttribute('aria-label',state.running?'Pausar cronómetro':'Reanudar cronómetro');
+ $('floatingPause').disabled=$('toggleBtn').disabled;
+ $('floatingHomeScore').textContent=state.scores[0];
+ $('floatingAwayScore').textContent=state.scores[1];
+};
+render();
+
 </script>
 </body>
 </html>
