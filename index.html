@@ -188,6 +188,28 @@ body{background:#060c0e;padding:10px}
  .team .scoreline .adjust-link{width:43px}
 }
 
+
+/* Identidad Mala Clase F.C.: violeta + dorado del escudo; visita gris pizarra. */
+:root {
+ --green:#a879ed;
+ --blue:#8292a6;
+}
+.timer {background:#1b1525;border-left-color:var(--green)}
+.team.home {background:#27183d;border-color:#9161cf}
+.team.away {background:#171f29;border-color:#4c5c6b}
+.toggle,.btn.primary,.scorebtn.plus {color:#200d31}
+.g-action,.team .scorebtn.plus {background:var(--green);color:#1f0e30;border-color:#dbc0ff}
+.team.away .g-action,.team.away .scorebtn.plus {background:var(--blue);color:#101923;border-color:#a6b2c1}
+.float-inner {background:rgba(23,16,31,.84);border-color:#9b85ae77}
+.float-control {background:#49315f;border-color:#b38be9;color:#fff}
+.float-extra {background:#30233d;border-color:#8e74a6}
+.float-clock {text-shadow:0 0 12px #9c6bdf55}
+.float-period {color:#d8c6eb}
+#floatingHomeScore {color:#d3b1ff}
+#floatingAwayScore {color:#b5c0cc}
+.float-extra .score-dash {color:#918a9d}
+.whatsapp-preview {border-color:#725891;background:linear-gradient(135deg,#241534,#181e29)}
+
 </style>
 </head>
 <body>
@@ -239,8 +261,8 @@ body{background:#060c0e;padding:10px}
 <section class="panel match-fouls">
     <h2 class="section-title">Control de faltas</h2>
     <div class="stats">
-      <div class="statbox"><div class="stathead"><span id="homeFoulLabel">Mala Clase +30</span><span>🟢</span></div><div class="statcount" id="homeFouls">0</div><div class="statbuttons"><button class="btn" id="homeFoulMinus" aria-label="Restar falta local">−</button><button class="btn f-action" id="homeFoulPlus" aria-label="Sumar falta local">+ FALTA</button></div><div class="note">Tiempo actual: <b id="homePeriodFouls">0</b> · Acumulado: <b id="homeTotalFouls">0</b></div></div>
-      <div class="statbox"><div class="stathead"><span id="awayFoulLabel">Rival</span><span>🔵</span></div><div class="statcount" id="awayFouls">0</div><div class="statbuttons"><button class="btn" id="awayFoulMinus" aria-label="Restar falta visita">−</button><button class="btn f-action" id="awayFoulPlus" aria-label="Sumar falta visitante">+ FALTA</button></div><div class="note">Tiempo actual: <b id="awayPeriodFouls">0</b> · Acumulado: <b id="awayTotalFouls">0</b></div></div>
+      <div class="statbox"><div class="stathead"><span id="homeFoulLabel">Mala Clase +30</span><span>🟣</span></div><div class="statcount" id="homeFouls">0</div><div class="statbuttons"><button class="btn" id="homeFoulMinus" aria-label="Restar falta local">−</button><button class="btn f-action" id="homeFoulPlus" aria-label="Sumar falta local">+ FALTA</button></div><div class="note">Tiempo actual: <b id="homePeriodFouls">0</b> · Acumulado: <b id="homeTotalFouls">0</b></div></div>
+      <div class="statbox"><div class="stathead"><span id="awayFoulLabel">Rival</span><span>⚪</span></div><div class="statcount" id="awayFouls">0</div><div class="statbuttons"><button class="btn" id="awayFoulMinus" aria-label="Restar falta visita">−</button><button class="btn f-action" id="awayFoulPlus" aria-label="Sumar falta visitante">+ FALTA</button></div><div class="note">Tiempo actual: <b id="awayPeriodFouls">0</b> · Acumulado: <b id="awayTotalFouls">0</b></div></div>
     </div>
     <div class="note">Al pasar al segundo tiempo, las faltas del tiempo actual vuelven a cero; el acumulado del partido se conserva.</div>
   </section>
@@ -570,7 +592,7 @@ function formatMatchSummary(m){
   const fullMinute=(e.period===2?half:0)+halfMinute;
   return String(fullMinute).padStart(2,'0')+"' ("+(e.period===2?'2T':'1T')+' '+String(halfMinute).padStart(2,'0')+"')";
  };
- const dots=(t)=>t==='home'?'🟢':'🔵';
+ const dots=(t)=>t==='home'?'🟣':'⚪';
  const goalLines=[];
  [1,2].forEach(period=>{
   const part=goals.filter(g=>g.period===period).sort((a,b)=>a.elapsedAt-b.elapsedAt);
