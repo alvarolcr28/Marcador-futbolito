@@ -210,6 +210,23 @@ body{background:#060c0e;padding:10px}
 .float-extra .score-dash {color:#918a9d}
 .whatsapp-preview {border-color:#725891;background:linear-gradient(135deg,#241534,#181e29)}
 
+
+/* Mini sanciones flotantes: lado izquierdo local, derecho visitante. */
+.yellow-floats{position:fixed;z-index:55;left:50%;bottom:max(13px,env(safe-area-inset-bottom,0px));width:min(calc(100% - 16px),720px);transform:translateX(-50%);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;pointer-events:none;align-items:end;transition:top .16s ease}
+.yellow-floats[hidden]{display:none!important}
+.yellow-floats.floating-mode{top:max(68px,calc(env(safe-area-inset-top,0px) + 65px));bottom:auto;align-items:start}
+.yellow-float-side{display:flex;flex-direction:column;gap:5px;min-width:0;align-items:flex-start}
+.yellow-float-side.away-side{align-items:flex-end}
+.yellow-float-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 7px;align-items:center;min-width:0;width:min(100%,205px);min-height:44px;padding:7px 9px;border:1px solid #d3b46b90;border-left:3px solid #fbbf24;border-radius:12px;background:rgba(35,27,46,.76);color:#fff4d9;box-shadow:0 7px 20px #0006;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.yellow-float-card.away{background:rgba(29,36,47,.76);border-color:#8994a074;border-left:3px solid #fbbf24}
+.yellow-float-player{font-size:11px;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;color:#f8e9f7}
+.yellow-float-card.away .yellow-float-player{color:#dae0ea}
+.yellow-float-time{font:900 clamp(19px,5vw,24px)/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;font-variant-numeric:tabular-nums;color:#ffe19a;grid-column:2;grid-row:1/3;text-align:right;white-space:nowrap}
+.yellow-float-caption{font-size:9px;line-height:1.15;color:#e0cadf;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.yellow-float-card.away .yellow-float-caption{color:#b7c0cf}
+.yellow-float-more{font-size:10px;font-weight:800;padding:3px 8px;border-radius:100px;border:1px solid #d6b66d66;background:rgba(34,27,42,.78);color:#ffe6a9}
+@media(max-width:390px){.yellow-floats{gap:8px}.yellow-float-card{padding:6px 7px;gap:0 4px;border-radius:10px}.yellow-float-player{font-size:10px}.yellow-float-time{font-size:clamp(17px,4.8vw,20px)}.yellow-float-caption{font-size:8px}}
+@media(prefers-reduced-motion:reduce){.yellow-floats{transition:none}}
 </style>
 </head>
 <body>
@@ -219,6 +236,11 @@ body{background:#060c0e;padding:10px}
     <div class="float-main"><div class="float-clock" id="floatingClock">00:00</div><div class="float-period" id="floatingPeriod">1.er tiempo</div></div>
     <div id="floatingExtra" class="float-extra" aria-label="Marcador actual"><span id="floatingHomeScore">0</span><span class="score-dash">–</span><span id="floatingAwayScore">0</span></div>
   </div>
+</aside>
+<!-- Sanciones temporales: se muestran solo mientras falten segundos de juego. -->
+<aside class="yellow-floats" id="yellowFloats" aria-label="Sanciones amarillas activas" hidden>
+  <div class="yellow-float-side home-side" id="yellowFloatHome"></div>
+  <div class="yellow-float-side away-side" id="yellowFloatAway"></div>
 </aside>
 
 <div class="app">
@@ -363,13 +385,57 @@ function renderGoals(){
    row.append(info,del);list.appendChild(row);
  });
 }
+function sanctionSecondsElapsed(card){
+ // Cards already have period + matchElapsed. Keep historical data intact.
+ const period=Number(card.period);
+ const recorded=Number(card.matchElapsed);
+ if((period===1||period===2) && Number.isFinite(recorded)){
+  const activePeriod=Math.max(1,Math.min(3,state.period));
+  const nowSeconds=(activePeriod-1)*halfSeconds() + (activePeriod===3?0:state.elapsed);
+  const cardSeconds=(period-1)*halfSeconds() + recorded;
+  return Math.max(0,Math.floor(nowSeconds-cardSeconds));
+ }
+ // Compatibility with a legacy card lacking a stored game-clock timestamp.
+ return Math.max(0,Math.floor((Date.now()-(Number(card.createdAt)||Date.now()))/1000));
+}
+function sanctionRemaining(card){return Math.max(0,120-sanctionSecondsElapsed(card));}
+function renderSanctionBubbles(){
+ const root=$("yellowFloats"),home=$("yellowFloatHome"),away=$("yellowFloatAway");
+ home.replaceChildren();away.replaceChildren();
+ // Hide after the match ends; the full yellow-card history remains available.
+ const active=state.period<=2?state.cards.filter(c=>sanctionRemaining(c)>0):[];
+ root.hidden=active.length===0;
+ if(!active.length)return;
+ for(const team of ["home","away"]){
+  const cards=active.filter(c=>c.team===team);
+  const target=team==="home"?home:away;
+  for(const card of cards.slice(0,3)){
+   const bubble=document.createElement("div");
+   bubble.className="yellow-float-card "+(team==="away"?"away":"home");
+   const player=document.createElement("div");player.className="yellow-float-player";
+   player.textContent="🟨 "+(card.player||"Jugador");
+   const remaining=document.createElement("div");remaining.className="yellow-float-time";
+   remaining.textContent=fmt(sanctionRemaining(card));
+   const sub=document.createElement("div");sub.className="yellow-float-caption";
+   sub.textContent="Reingresa en";
+   bubble.append(player,remaining,sub);
+   bubble.setAttribute("title",(card.player||"Jugador")+" · "+fmt(sanctionRemaining(card))+" para reincorporarse");
+   target.appendChild(bubble);
+  }
+  if(cards.length>3){
+   const more=document.createElement("div");more.className="yellow-float-more";
+   more.textContent="+"+(cards.length-3)+" amarilla(s) activa(s)";
+   target.appendChild(more);
+  }
+ }
+}
 function renderCards(){
  const list=$("yellowList");
  if(!state.cards.length){list.innerHTML='<div class="empty">Aún no hay amarillas registradas.</div>';return;}
  list.innerHTML="";
  state.cards.forEach((c,i)=>{
-   const elapsed=Math.floor((Date.now()-c.createdAt)/1000);
-   const remaining=Math.max(0,120-elapsed);
+   const elapsed=sanctionSecondsElapsed(c);
+   const remaining=sanctionRemaining(c);
    const row=document.createElement("div");row.className="yellow-card";
    const info=document.createElement("div");
    const badge=document.createElement("span");badge.className="card-badge";badge.textContent="AMARILLA";
@@ -733,6 +799,7 @@ document.getElementById('resetBtn').onclick=(e)=>{oldReset(e);actionUndo=null;do
    const below=big.getBoundingClientRect().bottom<4;
    mini.classList.toggle('shown',below);
    mini.setAttribute('aria-hidden',String(!below));
+   document.getElementById('yellowFloats').classList.toggle('floating-mode',below);
    btn.tabIndex=below?0:-1;
  }
  window.addEventListener('scroll',visible,{passive:true});
@@ -751,6 +818,7 @@ render=function(){
  $('floatingPause').disabled=$('toggleBtn').disabled;
  $('floatingHomeScore').textContent=state.scores[0];
  $('floatingAwayScore').textContent=state.scores[1];
+ renderSanctionBubbles();
 };
 render();
 
