@@ -228,6 +228,7 @@ body{background:#060c0e;padding:10px}
 @media(max-width:390px){.yellow-floats{gap:8px}.yellow-float-card{padding:6px 7px;gap:0 4px;border-radius:10px}.yellow-float-player{font-size:10px}.yellow-float-time{font-size:clamp(17px,4.8vw,20px)}.yellow-float-caption{font-size:8px}}
 @media(prefers-reduced-motion:reduce){.yellow-floats{transition:none}}
 </style>
+<link rel="stylesheet" href="./control-rapido.css">
 </head>
 <body>
 <aside id="floatingTimer" class="float-timer" aria-label="Cronómetro flotante" aria-hidden="true">
@@ -248,6 +249,45 @@ body{background:#060c0e;padding:10px}
     <div><div class="brand">⚽ Marcador de Futbolito</div><div class="tag">Modo árbitro · Control seguro</div></div>
     <div class="top-actions"><span class="pill">2 tiempos · duración editable</span><button class="iconbtn whatsapp" id="shareBtn" aria-label="Compartir resumen por WhatsApp" title="Compartir por WhatsApp">↗</button></div>
   </header>
+  <nav class="view-switch" aria-label="Elegir vista del marcador" role="tablist">
+    <button id="tabFull" role="tab" type="button" aria-selected="true" aria-controls="mainMatchArea" class="view-tab active">▦ Vista completa</button>
+    <button id="tabQuick" role="tab" type="button" aria-selected="false" aria-controls="quickBoard" class="view-tab">⚡ Control rápido</button>
+  </nav>
+  <section id="quickBoard" class="quick-board" role="tabpanel" aria-labelledby="tabQuick" aria-label="Control rápido del partido" hidden>
+    <div class="quick-head" aria-label="Reloj y resultado del partido">
+      <button class="quick-pause" type="button" id="quickPause" aria-label="Iniciar o pausar el reloj">▶</button>
+      <div class="quick-time-wrap"><div class="quick-period" id="quickPeriod">PRIMER TIEMPO</div><div class="quick-time" id="quickClock">00:00</div></div>
+      <div class="quick-score" aria-label="Resultado"><b id="quickHomeScore">0</b><span>:</span><b id="quickAwayScore">0</b></div>
+    </div>
+    <div class="quick-teamnames"><span id="quickHomeName">Local</span><span class="quick-vs">VS</span><span id="quickAwayName">Rival</span></div>
+    <section class="quick-section" aria-label="Registrar goles">
+      <h2><span>⚽ Goles</span><small>Sin duplicar el marcador</small></h2>
+      <div class="quick-grid">
+        <button id="quickHomeGoal" type="button" class="quick-goal home" aria-label="Anotar gol local y seleccionar goleador"><strong>⚽ GOL LOCAL</strong><span>Elegir goleador</span></button>
+        <button id="quickAwayGoal" type="button" class="quick-goal away" aria-label="Anotar gol visitante"><strong>⚽ GOL VISITA</strong><span>Registro directo</span></button>
+      </div>
+    </section>
+    <section class="quick-section" aria-label="Faltas por tiempo">
+      <h2><span>🚩 Faltas</span><small>Conteo del tiempo actual</small></h2>
+      <div class="quick-grid">
+        <div class="quick-foul-box home"><div class="quick-foul-head"><span id="quickHomeFoulName">Local</span><strong id="quickHomeFouls">0</strong></div>
+          <div class="quick-foul-buttons"><button id="quickHomeFoulMinus" type="button" aria-label="Restar falta local">−</button><button id="quickHomeFoulPlus" type="button" aria-label="Sumar falta local">+ FALTA</button></div><small id="quickHomeFoulsTotal">Acumulado: 0</small></div>
+        <div class="quick-foul-box away"><div class="quick-foul-head"><span id="quickAwayFoulName">Rival</span><strong id="quickAwayFouls">0</strong></div>
+          <div class="quick-foul-buttons"><button id="quickAwayFoulMinus" type="button" aria-label="Restar falta visita">−</button><button id="quickAwayFoulPlus" type="button" aria-label="Sumar falta visita">+ FALTA</button></div><small id="quickAwayFoulsTotal">Acumulado: 0</small></div>
+      </div>
+    </section>
+    <section class="quick-section" aria-label="Registrar tarjetas">
+      <h2><span>🟨🟥 Tarjetas</span><small>Elegir jugador al registrar</small></h2>
+      <div class="quick-grid">
+        <div class="quick-card-col home"><strong>LOCAL</strong><div><button id="quickHomeYellow" type="button" class="quick-yellow">🟨 Amarilla</button><button id="quickHomeRed" type="button" class="quick-red">🟥 Roja</button></div></div>
+        <div class="quick-card-col away"><strong>VISITA</strong><div><button id="quickAwayYellow" type="button" class="quick-yellow">🟨 Amarilla</button><button id="quickAwayRed" type="button" class="quick-red">🟥 Roja</button></div></div>
+      </div>
+    </section>
+    <div class="quick-actions"><button id="quickPeriodNext" class="btn gold" type="button">Segundo tiempo</button><button id="quickUndo" class="btn" type="button" disabled>↶ Deshacer</button></div>
+    <div class="quick-message" role="status" aria-live="polite" id="quickMessage">Mismos datos en ambas vistas. Cambia sin perder el partido.</div>
+  </section>
+
+  <div id="mainMatchArea">
 
   <section class="panel timer">
     <div class="period" id="periodLabel">PRIMER TIEMPO</div>
@@ -322,7 +362,8 @@ body{background:#060c0e;padding:10px}
     <div class="roster-tools"><button class="btn" id="manageTeamsBtn">⚙ Administrar equipos y jugadores</button></div>
   </section>
 </details>
-  <div class="footer">Modo árbitro · Los datos se guardan en este navegador. No modifica la web publicada.</div>
+  </div><!-- /mainMatchArea -->
+  <div class="footer">Modo árbitro · El partido y las ediciones personales se guardan en este navegador. Las plantillas oficiales se publican desde GitHub.</div>
 </div>
 
 <dialog id="goalDialog">
@@ -350,7 +391,7 @@ body{background:#060c0e;padding:10px}
   <div class="roster-list" id="rosterList"></div>
   <div class="field-row" style="margin-top:10px"><div class="field"><label for="newPlayerNumber">Número</label><input id="newPlayerNumber" type="number" min="0" placeholder="19"></div><div class="field"><label for="newPlayerName">Nombre</label><input id="newPlayerName" placeholder="Nombre jugador"></div></div>
   <div class="actions"><button class="btn primary" id="addPlayerBtn">+ Agregar jugador</button><button class="btn" id="saveRosterBtn">Guardar cambios</button></div>
-  <div class="note">Puedes editar número y nombre, quitar jugadores o agregar nuevos. Los cambios se guardan en este navegador.</div>
+  <div class="note">Puedes editar número y nombre, quitar jugadores o agregar nuevos. Tus cambios se guardan en este navegador. Para publicarlos para todos, actualiza plantillas.json en GitHub e incrementa su versión.</div>
 </dialog>
 
 <script>
@@ -359,13 +400,14 @@ const DEFAULT_TEAMS = {
   "Mala Clase +30":[["1","Cris"],["2","Alexis"],["3","Pipe"],["4","Jaime"],["5","Nachito"],["6","Samir"],["7","Juanfran"],["8","Beto"],["9","Paine"],["10","Pipo"],["11","Seba"],["12","Mario"],["13","Basti"],["14","Cristian"],["15","Hans"],["16","Pipe castro"],["17","José"],["18","Audi"]]
 };
 const $=id=>document.getElementById(id);
+const APP_STORAGE_KEY="marcadorFutbolitoArbitroNuevo3";
 let state = {
   teams: JSON.parse(JSON.stringify(DEFAULT_TEAMS)), period:1, elapsed:0, running:false, startedAt:0,
   scores:[0,0], periodFouls:[0,0], totalFouls:[0,0], cards:[], redCards:[], goals:[], awayName:"Rival", homeTeam:"Mala Clase +30", halfMinutes:25
 };
 let interval=null;
-function save(){try{state.homeTeam=$("homeTeam")?.value||state.homeTeam;state.halfMinutes=Number($("halfMinutes")?.value)||25;localStorage.setItem("marcadorFutbolitoArbitroNuevo3",JSON.stringify({...state,running:false,startedAt:0}));}catch(e){}}
-function load(){try{const raw=localStorage.getItem("marcadorFutbolitoArbitroNuevo3")||localStorage.getItem("marcadorFutbolitoPreview3")||localStorage.getItem("marcadorFutbolitoDraft");if(raw){const s=JSON.parse(raw);state={...state,...s,running:false,startedAt:0,teams:s.teams||JSON.parse(JSON.stringify(DEFAULT_TEAMS)),goals:s.goals||[],redCards:s.redCards||[],homeTeam:s.homeTeam||"Mala Clase +30",halfMinutes:s.halfMinutes||25};}}catch(e){}}
+function save(){try{state.homeTeam=$("homeTeam")?.value||state.homeTeam;state.halfMinutes=Number($("halfMinutes")?.value)||25;localStorage.setItem(APP_STORAGE_KEY,JSON.stringify({...state,running:false,startedAt:0}));}catch(e){}}
+function load(){try{const raw=localStorage.getItem(APP_STORAGE_KEY)||localStorage.getItem("marcadorFutbolitoPreview3")||localStorage.getItem("marcadorFutbolitoDraft");if(raw){const s=JSON.parse(raw);state={...state,...s,running:false,startedAt:0,teams:s.teams||JSON.parse(JSON.stringify(DEFAULT_TEAMS)),goals:s.goals||[],redCards:s.redCards||[],homeTeam:s.homeTeam||"Mala Clase +30",halfMinutes:s.halfMinutes||25};}}catch(e){}}
 function halfSeconds(){return Math.max(1,Math.min(90,Number($("halfMinutes").value)||25))*60;}
 function teamName(){return $("homeTeam").value;}
 function fmt(sec){sec=Math.max(0,Math.floor(sec));return String(Math.floor(sec/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0");}
@@ -823,5 +865,6 @@ render=function(){
 render();
 
 </script>
+<script src="./control-rapido.js" defer></script>
 </body>
 </html>
