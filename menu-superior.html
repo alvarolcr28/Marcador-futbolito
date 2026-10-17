@@ -1,0 +1,92 @@
+
+<style>
+.top-actions{gap:5px;flex-wrap:nowrap}
+#privateExit{order:999!important;margin-left:auto}
+#publishMatchQr,.top-actions .instagram-post{display:none!important}
+#fHubShareButton,#fHubSettingsButton{font-size:19px!important;flex-shrink:0}
+#fHubShareButton{background:#27bf72;color:#081c12}
+#fHubSettingsButton{background:#24354e}
+.fhub-dialog{max-width:min(600px,calc(100vw - 16px));width:100%;padding:15px;max-height:93dvh;overflow-y:auto;border:1px solid #9373b4}
+.fhub-dialog h2{margin:0;font-size:19px}
+.fhub-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.fhub-opt{display:flex;flex-direction:column;text-align:left;width:100%;gap:3px;padding:14px 15px;background:#1c293e;color:white;border:1px solid #465875;border-radius:12px;margin:7px 0;font-size:15px;font-weight:850;cursor:pointer}
+.fhub-opt small{font-weight:400;font-size:12px;color:#bfc9d9}
+.fhub-layout{display:grid;gap:11px}.fhub-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fhub-field{display:grid;gap:5px;font-size:12px;font-weight:800;color:#d3d6e2}
+.fhub-field input,.fhub-field select{width:100%;min-height:43px;border:1px solid #62718a;background:#091525;color:white;border-radius:9px;padding:8px;font:inherit}
+.fhub-line{border:1px solid #52617b;border-radius:12px;padding:12px;background:#141d2d}
+.fhub-line strong{display:block;margin-bottom:6px}
+.fhub-switch{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;padding:10px 6px}
+.fhub-switch input{height:22px;width:22px;accent-color:#ac86dd}
+.fhub-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.fhub-actions .btn{flex:1;min-width:112px}
+.fhub-status{border-left:3px solid #b58cea;background:#252239;border-radius:9px;padding:9px;color:#d7d0e6;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.fhub-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.fhub-tabs button{flex:1;min-width:100px;border-radius:9px;padding:10px 5px;background:#1b2739;border:1px solid #586987;color:#f7f4ff;font-size:12px;font-weight:800}
+.fhub-tabs button[aria-selected=true]{background:#9c79d0;border-color:#c6a7ed;color:#170a25}
+.fhub-tab-panel[hidden]{display:none!important}
+.fhub-qr{display:grid;place-items:center;margin:8px auto}
+.fhub-qr svg{width:min(240px,90%);height:auto;background:white;padding:9px;border-radius:10px}
+.fhub-link{display:block;word-break:break-all;font-size:11px;line-height:1.5;color:#e5d6ff;text-align:center;margin-bottom:8px}
+.fhub-small{color:#c0bdcf;font-size:12px;line-height:1.5}
+.fhub-list{display:grid;gap:7px}.fhub-item{border:1px solid #556079;border-radius:11px;padding:10px;background:#111a2b;overflow-wrap:anywhere}
+.fhub-item strong{font-size:13px}.fhub-item small{display:block;font-size:11px;color:#bcc4d4}
+@media(max-width:450px){.fhub-grid{grid-template-columns:1fr}.fhub-dialog{padding:11px}.top-actions .pill{display:none}.brand{font-size:19px!important}#privateExit{font-size:11px!important;min-width:42px!important}#fHubShareButton,#fHubSettingsButton{width:41px;height:41px}}
+</style>
+<dialog id="fHubShare" class="fhub-dialog">
+<div class="fhub-head"><h2>↗ Compartir partido</h2><button class="close" id="hubShareClose">✕</button></div>
+<button class="fhub-opt" id="hubSummary">📲 Compartir resumen detallado<small>El mensaje habitual de WhatsApp, con goles, faltas y tarjetas.</small></button>
+<button class="fhub-opt" id="hubQr">▦ Compartir marcador en vivo (QR)<small>Preparar el enlace, elegir de 3 a 24 horas y publicarlo sin salir.</small></button>
+<button class="fhub-opt" id="hubPhoto">📸 Compartir foto para redes<small>Abrir el diseñador de Instagram y guardar o compartir la imagen.</small></button>
+</dialog>
+<dialog id="fHubSettings" class="fhub-dialog">
+<div class="fhub-head"><h2>⚙ Ajustes de Futbolito</h2><button class="close" id="hubSettingsClose">✕</button></div>
+<div class="fhub-tabs" role="tablist">
+<button id="hubTabGame" aria-selected="true">⏱ Juego</button>
+<button id="hubTabLook" aria-selected="false">🎨 Personalizar</button>
+<button id="hubTabComp" aria-selected="false">🏆 Campeonato</button>
+</div>
+<div id="hubGame" class="fhub-tab-panel fhub-layout">
+ <div id="hubDuration"></div>
+ <div class="fhub-line"><strong>Reglas del partido</strong>
+ <label class="fhub-switch"><input id="hubYellowPopup" type="checkbox" checked> Mostrar aviso flotante de amarilla (2 minutos)</label>
+ <p class="fhub-small">Si lo ocultas, la tarjeta y la sanción siguen registradas. Solamente desaparece el aviso flotante.</p>
+ <label class="fhub-switch"><input id="hubResetFouls" type="checkbox" checked> Reiniciar faltas al comenzar el segundo tiempo</label>
+ <p class="fhub-small">Desactivado: el contador continúa sin reiniciarse. El acumulado del partido sigue registrado.</p>
+ </div>
+ <div class="fhub-actions"><button class="btn primary" id="hubSaveGame">Guardar ajustes</button></div>
+</div>
+<div id="hubLook" class="fhub-tab-panel fhub-layout" hidden>
+ <div id="hubTeams"></div><div id="hubTheme"></div>
+ <p class="fhub-small">Los colores personales se guardan en este dispositivo. Los cambios en las plantillas oficiales se gestionan en Supabase.</p>
+</div>
+<div id="hubCompetition" class="fhub-tab-panel fhub-layout" hidden>
+ <div id="hubCompetitionContents" class="fhub-layout"><p class="fhub-small">Cargando torneos, rivales e historial…</p></div>
+</div>
+</dialog>
+<dialog id="fHubQr" class="fhub-dialog">
+<div class="fhub-head"><h2>▦ QR · Partido en vivo</h2><button class="close" id="hubQrClose">✕</button></div>
+<p class="fhub-small">El tiempo de acceso comienza al pulsar «Publicar». Solo el administrador general o el encargado puede crear y compartir este QR.</p>
+<div class="fhub-layout">
+ <label class="fhub-field">Título del partido o torneo<input id="hubQrTitle" maxlength="100" value="Partido de Futbolito"></label>
+ <label class="fhub-field">Duración de acceso (3–24 horas)<input id="hubQrHours" type="number" min="3" max="24" step="1" value="6"></label>
+ <div class="fhub-grid">
+  <label class="fhub-field">Escudo local (opcional)<input id="hubLogoHome" type="file" accept="image/png,image/jpeg,image/webp"></label>
+  <label class="fhub-field">Escudo visitante (opcional)<input id="hubLogoAway" type="file" accept="image/png,image/jpeg,image/webp"></label>
+ </div>
+ <p class="fhub-small">PNG, JPG o WebP, máximo 1 MB por imagen. Sin escudos se muestran las iniciales.</p>
+ <div class="fhub-actions">
+  <button class="btn primary" id="hubPrepareQr">Preparar QR</button>
+  <button class="btn" id="hubSaveQr">Guardar título y escudos</button>
+  <button class="btn gold" id="hubPublishQr">📡 Publicar enlace</button>
+ </div>
+ <div id="hubQrPreview" hidden class="fhub-line">
+  <div class="fhub-qr" id="hubQrCode"></div>
+  <a id="hubQrUrl" class="fhub-link" target="_blank" rel="noopener noreferrer"></a>
+  <div class="fhub-actions"><button class="btn primary" id="hubCopyQr">Copiar enlace</button><button class="btn" id="hubWhatsappQr">Compartir WhatsApp</button></div>
+ </div>
+ <div class="fhub-actions"><button class="btn" id="hubRenewQr">Renovar QR</button><button class="btn danger" id="hubStopQr">Desactivar enlace</button></div>
+ <div class="fhub-status" id="hubQrStatus" role="status">Verificando permisos del club…</div>
+ <p class="fhub-small"><a href="/Marcador-futbolito/directo/" target="_blank" rel="noopener noreferrer">Abrir administración avanzada de transmisiones</a></p>
+</div>
+</dialog>
