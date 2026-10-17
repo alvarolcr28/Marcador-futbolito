@@ -5,7 +5,7 @@ const $=id=>document.getElementById(id);
 const originalButton=$("shareBtn"),top=document.querySelector(".top-actions");
 if(!originalButton||!top)return;
 try{
- const res=await fetch("/Marcador-futbolito/menu-superior.html?v=20261017-1",{cache:"no-cache"});
+ const res=await fetch("/Marcador-futbolito/menu-superior.html?v=20261017-social2",{cache:"no-cache"});
  if(!res.ok)throw Error("No fue posible cargar los nuevos menús.");
  const tpl=document.createElement("template");tpl.innerHTML=await res.text();
  document.body.appendChild(tpl.content);
@@ -34,7 +34,7 @@ try{
  async function loadExtension(path){
   await new Promise((resolve,reject)=>{
    const script=document.createElement("script");
-   script.src="/Marcador-futbolito/"+path+"?v=20261017-5";
+   script.src="/Marcador-futbolito/"+path+"?v=20261017-social2";
    script.onload=resolve;
    script.onerror=()=>reject(Error("No se pudo cargar "+path));
    document.body.appendChild(script);
@@ -46,12 +46,13 @@ try{
  await loadExtension("menu-torneos.js");
   await loadExtension("registro-jugadores.js");
  await loadExtension("publicacion-mvp.js");
+  await loadExtension("publicacion-redes.js");
  function closeOn(dialog,button){
   $(button).addEventListener("click",()=>dialog.close());
   dialog.addEventListener("click",e=>{if(e.target===dialog)dialog.close()});
  }
- const share=$("fHubShare"),settings=$("fHubSettings"),qr=$("fHubQr"),summary=$("fHubSummaryPreview");
- closeOn(share,"hubShareClose");closeOn(settings,"hubSettingsClose");closeOn(qr,"hubQrClose");
+ const share=$("fHubShare"),social=$("fHubSocial"),settings=$("fHubSettings"),qr=$("fHubQr"),summary=$("fHubSummaryPreview");
+ closeOn(share,"hubShareClose");closeOn(social,"hubSocialClose");closeOn(settings,"hubSettingsClose");closeOn(qr,"hubQrClose");
  closeOn(summary,"hubSummaryClose");
  const gear=document.createElement("button");
  gear.id="fHubSettingsButton";gear.type="button";gear.className="iconbtn";
@@ -102,7 +103,10 @@ try{
   else if(typeof currentSummary==="function")window.open("https://wa.me/?text="+encodeURIComponent(currentSummary()),"_blank","noopener");
  });
  $("hubPhoto").addEventListener("click",()=>{
-  share.close();
+  share.close();social.showModal();
+ });
+ $("hubSocialResult").addEventListener("click",()=>{
+  social.close();
   const button=$("openInstagramPost");
   if(button)button.click();
   else alert("No se cargó el generador de imagen para redes.");
