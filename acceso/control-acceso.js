@@ -10,7 +10,7 @@ const gateNode=document.createElement('section');
 gateNode.id='sessionGate';
 gateNode.setAttribute('role','region');
 gateNode.setAttribute('aria-label','Acceso privado');
-gateNode.innerHTML='<div class="gate-card"><h1>🔐 Marcador privado</h1><p>Ingresa con tu correo y contraseña para utilizar el marcador de tu equipo.</p><div id="sessionLoginArea"><form id="sessionForm"><label for="sessionEmail">Correo electrónico</label><input id="sessionEmail" type="email" autocomplete="username" required><label for="sessionPassword">Contraseña</label><input id="sessionPassword" type="password" autocomplete="current-password" required><button id="sessionSubmit" type="submit">Ingresar</button></form></div><p id="sessionMessage" role="status" aria-live="polite">Comprobando sesión y permisos…</p><div id="sessionActions" hidden><strong id="authorizedClub"></strong><small id="sessionUser"></small></div><div class="gate-links"><button id="sessionRetry" type="button">Reintentar</button><button id="sessionLogout" type="button">Cerrar sesión</button><a href="/Marcador-futbolito/acceso/">Panel de administración</a></div><small class="gate-note">La sesión y los permisos del club se verifican mediante Supabase.</small></div>';
+gateNode.innerHTML='<div class="gate-card"><h1>🔐 Marcador privado</h1><p>Ingresa con tu correo y contraseña para utilizar el marcador de tu equipo.</p><div id="sessionLoginArea"><form id="sessionForm"><label for="sessionEmail">Correo electrónico</label><input id="sessionEmail" type="email" autocomplete="username" required><label for="sessionPassword">Contraseña</label><input id="sessionPassword" type="password" autocomplete="current-password" required><button id="sessionSubmit" type="submit">Ingresar</button></form></div><p id="sessionMessage" role="status" aria-live="polite">Comprobando sesión y permisos…</p><div id="sessionActions" hidden><strong id="authorizedClub"></strong><small id="sessionUser"></small></div><div class="gate-links"><button id="sessionRetry" type="button">Reintentar</button><button id="sessionLogout" type="button">Cerrar sesión</button><a href="/Marcador-futbolito/inicio/">Inicio</a></div><small class="gate-note">La sesión y los permisos del club se verifican mediante Supabase.</small></div>';
 document.body.prepend(gateNode);
 const gateStyle=document.createElement('style');
 gateStyle.textContent='#sessionGate{position:fixed;inset:0;z-index:999999;display:grid;place-items:center;padding:16px;overflow-y:auto;background:#0b0e18;color:#fff;font:15px system-ui,-apple-system,sans-serif}#sessionGate[hidden],#sessionLoginArea[hidden],#sessionActions[hidden]{display:none!important}.gate-card{width:min(440px,100%);background:linear-gradient(140deg,#282039,#111822);border:1px solid #806592;border-radius:20px;padding:22px;box-shadow:0 18px 50px #0008}.gate-card h1{font-size:25px;margin:0}.gate-card p{line-height:1.5;color:#ddd4e4;font-size:14px}.gate-card form{display:grid;gap:9px;margin-top:18px}.gate-card label{font-size:13px;font-weight:800}.gate-card input{width:100%;box-sizing:border-box;min-height:46px;border:1px solid #887995;background:#0a0e18;color:white;border-radius:10px;padding:9px 11px;font:inherit}.gate-card form button{min-height:49px;font-size:16px;font-weight:850;border:none;border-radius:10px;background:#bc90ee;color:#251331;margin-top:9px}.gate-card form button:disabled{opacity:.5}.gate-links{display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px}.gate-links a,.gate-links button{border:none;background:transparent;color:#e3c5ff;font:700 12px system-ui;text-decoration:underline;cursor:pointer}.gate-card small{display:block;color:#bcb1cc;font-size:11px;line-height:1.4;margin-top:10px}';
@@ -37,6 +37,15 @@ document.head.append(gateStyle);
   exitButton.style.cssText="font:800 12px system-ui;min-width:48px;border:1px solid #bca0d8;background:#3e2e50;color:#fff";
   (document.querySelector(".top-actions")||document.body).appendChild(exitButton);
   let client=null, authorized=false;
+  const clubSwitcher=document.createElement("a");
+  clubSwitcher.href="/Marcador-futbolito/inicio/";
+  clubSwitcher.textContent="⇄";
+  clubSwitcher.title="Cambiar de club";
+  clubSwitcher.setAttribute("aria-label","Cambiar de club");
+  clubSwitcher.className="iconbtn";
+  clubSwitcher.hidden=true;
+  clubSwitcher.style.cssText="display:grid;place-items:center;text-decoration:none;font-size:22px;min-width:40px;max-width:48px";
+  (document.querySelector(".top-actions")||document.body).appendChild(clubSwitcher);
 
   function showMessage(text, isError=false){
     message.textContent=text;
@@ -47,6 +56,7 @@ document.head.append(gateStyle);
     document.documentElement.classList.remove("futbolito-unlocked");
     gate.hidden=false;
     exitButton.hidden=true;
+    clubSwitcher.hidden=true;
     loginArea.hidden=false;
     actionArea.hidden=true;
     who.textContent="";
@@ -119,7 +129,9 @@ document.head.append(gateStyle);
       return;
     }
     await loadOfficialRosters(club);
+    const generalResult=await client.rpc("is_platform_admin");
     unlock(user,club);
+    clubSwitcher.hidden=generalResult.error||generalResult.data!==true;
   }
   function signedOut(){
     if(readAppAvailable()&&state.running) document.getElementById("toggleBtn")?.click();
