@@ -11,18 +11,25 @@ function numberPair(id,value){
  const a=document.createElement("span");a.textContent=String(Number(arr[1])||0);
  root.append(h,document.createTextNode(" - "),a);
 }
+function initials(name){
+ const stop=new Set(["y","de","del","la","las","los","el","the","fc","f.c.","+30"]);
+ const words=String(name||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+  .split(/\s+/).map(x=>x.replace(/[^A-Za-z0-9]/g,"").toLowerCase()).filter(x=>x&&!stop.has(x));
+ return (words.slice(0,2).map(x=>x[0]).join("")||"⚽").toUpperCase();
+}
 function updateBadge(id,url,name){
  const root=$(id);root.replaceChildren();
- if(typeof url==="string"&&url.startsWith("https://cpqvrmorbwrrorrsobgj.supabase.co/storage/v1/object/public/futbolito-escudos/")){
-  const image=document.createElement("img");
-  image.alt="Escudo de "+name;image.src=url;image.decoding="async";
-  image.onerror=()=>{root.replaceChildren();const fallback=document.createElement("span");fallback.className="letters";fallback.textContent=(name||"⚽").split(/\s+/).map(x=>x[0]||"").slice(0,2).join("").toUpperCase();root.append(fallback)};
-  root.append(image);
- }else{
+ const fallback=()=>{
+  root.replaceChildren();root.classList.add("fallback-badge");
   const label=document.createElement("span");label.className="letters";
-  label.textContent=(name||"⚽").split(/\s+/).map(x=>x[0]||"").slice(0,2).join("").toUpperCase();
+  label.textContent=initials(name);
   root.append(label);
- }
+ };
+ if(typeof url==="string"&&url.startsWith("https://cpqvrmorbwrrorrsobgj.supabase.co/storage/v1/object/public/futbolito-escudos/")){
+  root.classList.remove("fallback-badge");
+  const img=document.createElement("img");img.alt="Escudo de "+name;img.src=url;img.decoding="async";img.onerror=fallback;
+  root.append(img);
+ }else fallback();
 }
 function eventTeam(ev,snapshot){
  return ev.team==="home"?snapshot.home_name:snapshot.away_name;
