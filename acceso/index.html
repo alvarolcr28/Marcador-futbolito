@@ -11,11 +11,12 @@
 </head>
 <body>
 <div class="wrap">
- <div class="head"><div><div class="logo">⚽ Futbolito · Administración</div><div class="sub">Acceso privado · Mala Clase / Larraguibel</div></div><button id="logout" class="btn small" hidden>Cerrar sesión</button></div>
+ <div class="head"><div><div class="logo">⚽ Futbolito · Plantillas oficiales</div><div class="sub">Acceso privado · Equipos autorizados</div></div><button id="logout" class="btn small" hidden>Cerrar sesión</button></div>
+ <div style="margin:0 0 15px"><a href="../usuarios/" style="display:inline-block;border:1px solid #8969b4;border-radius:10px;padding:9px 13px;color:#e0c8ff;text-decoration:none;font-weight:850">👥 Gestionar usuarios y permisos</a></div>
  <div id="authBox" class="card login">
   <h1>Ingresar a Futbolito</h1><p class="lead">Solo las cuentas autorizadas pueden administrar equipos y jugadores.</p>
   <form id="signInForm">
-    <label class="field">Correo administrador<input id="email" type="email" value="alvaro.lcr28@gmail.com" autocomplete="username" required></label>
+    <label class="field">Correo electrónico<input id="email" type="email" autocomplete="username" required></label>
     <label class="field">Contraseña<input id="password" type="password" autocomplete="current-password" minlength="8" required placeholder="Tu contraseña privada"></label>
     <div class="actions"><button class="btn primary" type="submit">Iniciar sesión</button><button class="btn" type="button" id="register">Crear mi acceso</button></div>
   </form>
@@ -34,7 +35,7 @@
    <section class="card">
      <h2 id="clubTitle">Selecciona un club</h2>
      <div id="rosterSection" hidden>
-      <div class="admin-note">Editor de plantillas oficial. Los cambios están protegidos por permisos del servidor. Los marcadores actuales todavía no utilizan esta base de datos; se conectarán después de verificar tu acceso.</div>
+      <div class="admin-note">Editor de plantillas oficiales. Los cambios se guardan en Supabase y se reflejan en los marcadores al iniciar sesión o volver a cargar.</div>
       <label class="field">Plantilla<select id="squadSelect"></select></label>
       <div id="players"></div>
       <div class="mini-section"><div class="smallcap">Añadir jugador</div>
@@ -54,14 +55,14 @@ const BOOTSTRAP_EMAIL='alvaro.lcr28@gmail.com';
 const db=createClient(PROJECT_URL,PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
 const $=id=>document.getElementById(id);
 const linkBack=location.origin+location.pathname;
-let clubs=[], selectedClub=null, squads=[], activeSquad=null, busy=false;
+let clubs=[], selectedClub=null, squads=[], activeSquad=null, busy=false, isPlatformAdmin=false, managedClubIds=[];
 function status(message,error=false,target='authStatus'){const el=$(target);el.textContent=message;el.classList.toggle('error',error);}
 function disableForm(disabled){$('signInForm').querySelectorAll('button,input').forEach(x=>x.disabled=disabled);}
 function showGuest(){ $('authBox').hidden=false; $('adminBox').hidden=true; $('logout').hidden=true;}
 function showAdmin(){ $('authBox').hidden=true; $('adminBox').hidden=false; $('logout').hidden=false;}
 async function fetchClubs(){
  const {data,error}=await db.from('clubs').select('id,slug,name').order('name');
- if(error)throw error;clubs=data||[];const list=$('clubList');list.replaceChildren();
+ if(error)throw error;clubs=(data||[]).filter(c=>isPlatformAdmin||managedClubIds.includes(c.id));const list=$('clubList');list.replaceChildren();
  for(const club of clubs){const btn=document.createElement('button');btn.className='club'+(selectedClub?.id===club.id?' active':'');btn.textContent=club.name;
   const small=document.createElement('small');small.textContent=club.slug;btn.appendChild(small);btn.onclick=()=>selectClub(club.id);list.append(btn);}
  if(!clubs.length){const empty=document.createElement('p');empty.textContent='Aún no hay clubes disponibles.';list.append(empty);}
@@ -129,8 +130,16 @@ async function checkAccess(){
   if(claimError)throw claimError;
   const {data:isAdmin,error:adminError}=await db.rpc('is_platform_admin');
   if(adminError)throw adminError;
-  if(!isAdmin){await db.auth.signOut();showGuest();status('La cuenta está verificada, pero no tiene permiso de administrador.',true);return;}
-  showAdmin();status('Acceso verificado. Sesión iniciada como administrador general.',false,'adminStatus');
+  isPlatformAdmin=isAdmin===true;
+  const {data:myRoles,error:rolesError}=await db.rpc('get_my_club_roles');
+  if(rolesError)throw rolesError;
+  managedClubIds=(myRoles||[]).filter(r=>r.role==='manager').map(r=>r.club_id);
+  if(!isPlatformAdmin&&!managedClubIds.length){
+    showGuest();status('Tu sesión está activa, pero no tienes permisos para editar plantillas oficiales.',true);return;
+  }
+  $('addClub').hidden=!isPlatformAdmin;
+  showAdmin();
+  status(isPlatformAdmin?'Administrador general · acceso autorizado.':'Encargado · solo puedes editar los equipos asignados.',false,'adminStatus');
   await fetchClubs();
  }catch(err){showGuest();status(err?.message||'No se pudo validar el acceso.',true);}
  finally{busy=false;}
