@@ -428,7 +428,7 @@ $("clubSearch").addEventListener("keydown",event=>{
  }
 });
 $("moreClubs").addEventListener("click",()=>{expanded=!expanded;renderClubMatches()});
-const supported={ "mala-clase":"../", "larraguibel":"../larraguibel/" };
+const supported={ "mala-clase":"../?acceso=directo2", "larraguibel":"../larraguibel/?acceso=directo2" };
 function safeRoute(slug){return Object.prototype.hasOwnProperty.call(supported,slug)?supported[slug]:null}
 function message(text,error=false){$("status").textContent=text;$("status").classList.toggle("error",error)}
 function showLogin(){
