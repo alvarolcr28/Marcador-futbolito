@@ -58,7 +58,7 @@ try{
  gear.id="fHubSettingsButton";gear.type="button";gear.className="iconbtn";
  gear.textContent="⚙";gear.title="Ajustes";gear.setAttribute("aria-label","Abrir ajustes");
  top.insertBefore(gear,originalButton);
- originalButton.id="fHubShareButton";originalButton.textContent="↗";
+ originalButton.id="fHubShareButton";originalButton.innerHTML="<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\" width=\"23\" height=\"23\" fill=\"none\"\n stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"display:block;margin:auto\">\n <rect x=\"4.5\" y=\"9.5\" width=\"15\" height=\"12\" rx=\"2.4\"></rect>\n <path d=\"M12 15V2.5M7.6 6.9 12 2.5l4.4 4.4\"></path>\n </svg>";
  originalButton.title="Compartir";originalButton.setAttribute("aria-label","Compartir partido");
  originalButton.onclick=null;
  originalButton.addEventListener("click",()=>share.showModal());
