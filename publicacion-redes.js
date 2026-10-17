@@ -124,7 +124,7 @@
    ctx.fillStyle="#091524c9";rect(56,476,968,H-557,20);ctx.fill();
    paintText("⚽ GOLES REGISTRADOS",88,539,890,36,accent,"left",850);
    const goals=scorerLines();
-   const max=H===1920?24:14;
+   const max=H===1920?22:12;
    if(!goals.length){
     paintText("Aún no hay goles registrados.",90,633,877,34,"#c6d5e5","left",700);
    }else{
