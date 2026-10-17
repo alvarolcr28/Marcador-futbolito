@@ -257,7 +257,10 @@ async function archive(manual=false){
  };
  const r=await db.rpc("archive_match_with_period_fouls",data);
  if(r.error)throw r.error;
- state.archivePending=false;if(typeof save==="function")save();
+ state.archivePending=false;
+ // Al completar una fecha, evitar reutilizarla accidentalmente en otro partido.
+ if(context.fixtureId){ctx.fixtureId=null;keepContext();}
+ if(typeof save==="function")save();
  if(mounted)await queryAll();
  message(r.data?.already_saved?
   "Este partido ya estaba guardado en Supabase. No se ha duplicado.":"Partido finalizado y guardado en el historial del club.");
