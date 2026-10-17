@@ -95,6 +95,13 @@ document.head.append(gateStyle);
     $("homeTeam").value=chosen;
     populatePlayerSelect();
     render();
+    // En modo autenticado, la edición oficial de plantillas debe hacerse
+    // en Supabase (no en el formulario local del marcador).
+    const manage=$("manageTeamsBtn");
+    if(manage){
+      manage.textContent="⚙ Editar plantillas oficiales";
+      manage.onclick=()=>window.open("/Marcador-futbolito/acceso/","_blank","noopener");
+    }
   }
   async function verify(){
     showMessage("Comprobando sesión y permisos…");
