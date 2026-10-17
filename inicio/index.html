@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101726">
+<title>Futbolito · Ingresar a mi equipo</title>
+<style>
+:root{color-scheme:dark;--bg:#0c1421;--panel:#172335;--line:#385064;--text:#f6f9fc;--muted:#b4c8d3;--accent:#6ee5b4;--red:#ff9da9}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at 50% -10%,#244a4b 0,#0c1421 52%);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+main{width:min(100%,520px);margin:0 auto;padding:clamp(24px,6vw,60px) 16px 38px}
+.brand{display:flex;align-items:center;gap:13px;margin-bottom:24px}.ball{display:grid;place-items:center;width:54px;height:54px;background:#233d42;border:1px solid #527973;border-radius:16px;font-size:29px}
+h1{font-size:clamp(28px,7vw,37px);line-height:1.12;letter-spacing:-.7px;margin:0 0 10px;font-weight:900}
+.lead{color:var(--muted);margin:0 0 24px;line-height:1.65}
+.card{background:#172335eb;border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 14px 36px #0003}
+.field{display:block;margin:0 0 15px;font-weight:750;font-size:13px}
+input{width:100%;margin-top:6px;min-height:49px;padding:11px 12px;border:1px solid #5c6f7a;border-radius:11px;background:#0b1827;color:white;font:inherit;font-size:16px}
+button,.linkbtn{font:inherit;cursor:pointer;border-radius:11px;font-weight:850;min-height:48px}
+button:disabled{opacity:.5;cursor:not-allowed}
+.primary{background:var(--accent);color:#082923;border:1px solid var(--accent);width:100%;padding:10px}
+.secondary{background:#23344a;color:white;border:1px solid #617289;padding:10px 14px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.controls>*{flex:1 1 130px}
+.status{min-height:27px;color:var(--muted);margin:12px 0 0;font-size:13px;white-space:pre-line}
+.status.error{color:var(--red)}
+.cards{display:grid;gap:11px;margin-top:18px}
+.club{display:block;padding:15px 16px;border:1px solid #54777b;background:#142f34;color:white;border-radius:13px;text-decoration:none;min-height:69px}
+.club strong{display:block;font-size:17px}.club small{color:#b7d9d3;font-size:12px}
+.club:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #e9db89;outline-offset:3px}
+.role{display:inline-block;margin-bottom:12px;color:#bcf7de;font-size:12px;font-weight:900;letter-spacing:.4px}
+.note{font-size:12px;color:var(--muted);line-height:1.6;margin:18px 0 0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <header class="brand"><div class="ball" aria-hidden="true">⚽</div><div><strong style="font-size:19px">Futbolito</strong><div style="font-size:12px;color:var(--muted)">Acceso privado por equipo</div></div></header>
+  <h1 id="title">Tu equipo, tu marcador.</h1>
+  <p class="lead" id="intro">Inicia sesión con tu cuenta autorizada. Te llevaremos directamente al equipo que te corresponde.</p>
+  <section class="card" id="loginBox">
+    <form id="loginForm">
+      <label class="field" for="email">Correo electrónico<input id="email" type="email" autocomplete="username" required></label>
+      <label class="field" for="password">Contraseña<input id="password" type="password" autocomplete="current-password" required></label>
+      <button type="submit" class="primary" id="loginBtn">Ingresar a mi equipo</button>
+    </form>
+    <p class="note">El administrador general asigna los permisos. No necesitas acceder a Supabase.</p>
+  </section>
+  <section class="card" id="teamsBox" hidden>
+    <div class="role" id="role"></div>
+    <div id="clubs" class="cards"></div>
+    <div class="controls">
+      <a class="secondary linkbtn" id="adminLink" href="../acceso/" style="display:grid;place-items:center;text-align:center;text-decoration:none" hidden>Administrar plantillas</a>
+      <a class="secondary linkbtn" id="usersLink" href="../usuarios/" style="display:grid;place-items:center;text-align:center;text-decoration:none" hidden>Usuarios y permisos</a>
+      <button class="secondary" type="button" id="logout">Cerrar sesión</button>
+    </div>
+  </section>
+  <p class="status" id="status" role="status" aria-live="polite">Comprobando sesión…</p>
+  <p class="note">Cada cuenta solo puede entrar en los clubes que tenga autorizados. Los permisos de acceso también se verifican en la base de datos.</p>
+</main>
+<script type="module">
+import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/+esm";
+const db=createClient("https://cpqvrmorbwrrorrsobgj.supabase.co","sb_publishable_KDivcfl1sf6CumXuMhi77w_k-01gmD4",
+ {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const $=id=>document.getElementById(id);
+let busy=false;
+const supported={ "mala-clase":"../", "larraguibel":"../larraguibel/" };
+function safeRoute(slug){return Object.prototype.hasOwnProperty.call(supported,slug)?supported[slug]:null}
+function message(text,error=false){$("status").textContent=text;$("status").classList.toggle("error",error)}
+function showLogin(){
+ $("loginBox").hidden=false;$("teamsBox").hidden=true;
+ $("title").textContent="Tu equipo, tu marcador.";
+ $("intro").textContent="Inicia sesión con tu cuenta autorizada. Te llevaremos directamente al equipo que te corresponde.";
+ message("");
+}
+function showClubs(clubs,isGeneral,roles){
+ $("loginBox").hidden=true;$("teamsBox").hidden=false;
+ $("title").textContent=isGeneral?"Administración de clubes":"Mis equipos";
+ $("intro").textContent=isGeneral?
+ "Como administrador general puedes entrar a cualquiera de los clubes.":"Solamente puedes acceder a tus equipos autorizados.";
+ $("role").textContent=isGeneral?"ADMINISTRADOR GENERAL":"ACCESO AUTORIZADO";
+ $("adminLink").hidden=!isGeneral&&!roles.some(r=>r.role==="manager");
+ $("usersLink").hidden=!isGeneral&&!roles.some(r=>r.role==="manager");
+ const list=$("clubs");list.replaceChildren();
+ for(const club of clubs){
+  const path=safeRoute(club.slug);
+  const label=document.createElement(path?"a":"div");
+  label.className="club";
+  if(path)label.href=path;
+  const heading=document.createElement("strong");heading.textContent=club.name;
+  const sub=document.createElement("small");
+  sub.textContent=path?"Entrar al marcador →":"Club autorizado · marcador pendiente de configurar";
+  label.append(heading,sub);list.append(label);
+ }
+ message(clubs.length?"Selecciona tu equipo.":"No tienes equipos asignados. Solicita acceso al administrador.",!clubs.length);
+}
+async function routeUser(){
+ if(busy)return;busy=true;$("loginBtn").disabled=true;
+ try{
+  message("Verificando tus permisos…");
+  const {data:{user},error:userError}=await db.auth.getUser();
+  if(userError||!user){showLogin();return}
+  if(!user.email_confirmed_at){
+   $("loginBox").hidden=false;$("teamsBox").hidden=true;
+   message("Debes confirmar primero tu correo electrónico.",true);return;
+  }
+  const claim=await db.rpc("claim_admin_role");
+  if(claim.error)throw claim.error;
+  const [adminResult,roleResult,clubResult]=await Promise.all([
+    db.rpc("is_platform_admin"),
+    db.rpc("get_my_club_roles"),
+    db.from("clubs").select("id,name,slug").order("name")
+  ]);
+  if(adminResult.error)throw adminResult.error;
+  if(roleResult.error)throw roleResult.error;
+  if(clubResult.error)throw clubResult.error;
+  const isGeneral=adminResult.data===true;
+  const roles=Array.isArray(roleResult.data)?roleResult.data:[];
+  const allowedIds=new Set(roles.filter(r=>r.role==="operator"||r.role==="manager").map(r=>String(r.club_id)));
+  const clubs=(clubResult.data||[]).filter(c=>isGeneral||allowedIds.has(String(c.id)));
+  if(!isGeneral&&clubs.length===1){
+   const route=safeRoute(clubs[0].slug);
+   if(route){message("Abriendo "+clubs[0].name+"…");location.replace(route);return}
+  }
+  showClubs(clubs,isGeneral,roles);
+ }catch(error){
+  $("loginBox").hidden=false;$("teamsBox").hidden=true;
+  message("No pudimos verificar tus permisos. Intenta nuevamente. "+(error?.message||""),true);
+ }finally{busy=false;$("loginBtn").disabled=false}
+}
+$("loginForm").addEventListener("submit",async event=>{
+ event.preventDefault();if(busy)return;
+ busy=true;$("loginBtn").disabled=true;message("Iniciando sesión…");
+ try{
+  const {error}=await db.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
+  $("password").value="";
+  if(error)throw error;
+ }catch(error){message(error?.message||"No se pudo iniciar sesión.",true);busy=false;$("loginBtn").disabled=false;return}
+ busy=false;await routeUser();
+});
+$("logout").addEventListener("click",async()=>{
+ if(busy)return;busy=true;message("Cerrando sesión…");
+ try{const {error}=await db.auth.signOut();if(error)throw error;showLogin();}
+ catch(e){message("No se pudo cerrar la sesión. "+e.message,true)}
+ finally{busy=false}
+});
+routeUser();
+</script>
+</body>
+</html>
