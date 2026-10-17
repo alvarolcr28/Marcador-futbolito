@@ -257,6 +257,7 @@ async function archive(manual=false){
  };
  const r=await db.rpc("archive_match_with_period_fouls",data);
  if(r.error)throw r.error;
+ state.archivePending=false;if(typeof save==="function")save();
  if(mounted)await queryAll();
  message(r.data?.already_saved?
   "Este partido ya estaba guardado en Supabase. No se ha duplicado.":"Partido finalizado y guardado en el historial del club.");
@@ -270,6 +271,7 @@ function wrapFinishAndReset(){
    // Guardar resultado definitivo incluso cuando no esté abierto el menú de ajustes.
    archive(false).catch(e=>{
     console.error("Historial de Futbolito: ",e);
+    state.archivePending=true;if(typeof save==="function")save();
     if(mounted)message("El historial aún no se guardó: "+e.message,true);
    });
   });
@@ -279,11 +281,21 @@ function wrapFinishAndReset(){
   reset.onclick=function(...args){
    const scores=state?.scores;
    const out=old.apply(this,args);
-   if(scores!==state.scores){state.archiveId=null;state.firstHalfFouls=null;if(typeof save==="function")save();}
+   if(scores!==state.scores){state.archiveId=null;state.firstHalfFouls=null;state.archivePending=false;if(typeof save==="function")save();}
    return out;
   };
  }
 }
 wrapFinishAndReset();
+let archiveRetrying=false;
+async function retryPendingArchive(){
+ if(archiveRetrying||typeof state==="undefined"||state.period!==3||!state.archivePending)return;
+ archiveRetrying=true;
+ try{await archive(false)}catch(e){console.warn("Historial pendiente de sincronizar",e.message)}
+ finally{archiveRetrying=false}
+}
+window.addEventListener("online",retryPendingArchive);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)retryPendingArchive()});
+setTimeout(retryPendingArchive,4500);
 window.FutbolitoTorneos={mount,archive};
 })();
