@@ -91,4 +91,5 @@ async function syncOfficialRosters(){
   populatePlayerSelect();render();
  }catch(e){/* Sin conexión, se utiliza la plantilla incorporada al HTML. */}
 }
-syncOfficialRosters();
+// La edición oficial de plantillas ahora proviene de Supabase al iniciar sesión.
+if(!document.documentElement.classList.contains("auth-trial"))syncOfficialRosters();
