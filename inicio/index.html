@@ -144,10 +144,123 @@ button:disabled{opacity:.5;cursor:not-allowed}
  },18000);
 })();
 </script>
-<script type="module">
-import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/+esm";
-const db=createClient("https://cpqvrmorbwrrorrsobgj.supabase.co","sb_publishable_KDivcfl1sf6CumXuMhi77w_k-01gmD4",
- {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+<script>
+/* Entrada compatible con Safari y navegadores integrados.
+   Supabase Auth verifica los JWT y las políticas RLS protegen los clubes.
+   Se evita el bloqueo de sesión del SDK en esta página de acceso. */
+const SB_URL="https://cpqvrmorbwrrorrsobgj.supabase.co";
+const SB_KEY="sb_publishable_KDivcfl1sf6CumXuMhi77w_k-01gmD4";
+const SB_SESSION="sb-cpqvrmorbwrrorrsobgj-auth-token";
+function savedAuth(){
+ try{
+  const s=JSON.parse(localStorage.getItem(SB_SESSION)||"null");
+  return s && typeof s.access_token==="string" && typeof s.refresh_token==="string"?s:null;
+ }catch{return null}
+}
+function forgetAuth(){try{localStorage.removeItem(SB_SESSION)}catch{}}
+function storeAuth(data){
+ if(!data||typeof data.access_token!=="string"||typeof data.refresh_token!=="string")
+  throw Error("La respuesta de autenticación estaba incompleta.");
+ const s={...data,
+  token_type:data.token_type||"bearer",
+  expires_at:Number(data.expires_at)||Math.floor(Date.now()/1000)+Number(data.expires_in||3600)
+ };
+ try{localStorage.setItem(SB_SESSION,JSON.stringify(s))}
+ catch{throw Error("Este navegador no permite guardar la sesión. Abre Futbolito en Safari.")}
+ return s;
+}
+async function supabaseRequest(path,{method="GET",token,body,timeout=12000}={}){
+ const control=new AbortController(),timer=setTimeout(()=>control.abort(),timeout);
+ try{
+  const headers={"apikey":SB_KEY,"Accept":"application/json"};
+  if(token)headers.Authorization="Bearer "+token;
+  if(body!==undefined)headers["Content-Type"]="application/json";
+  const response=await fetch(SB_URL+"/"+(path.startsWith("/")?path.slice(1):path),{
+   method,headers,body:body===undefined?undefined:JSON.stringify(body),
+   signal:control.signal,cache:"no-store"
+  });
+  const raw=await response.text();
+  let json=null;
+  try{json=raw?JSON.parse(raw):null}catch{}
+  if(!response.ok){
+   const msg=json?.msg||json?.message||json?.error_description||json?.error||"Respuesta "+response.status;
+   const e=new Error(typeof msg==="string"?msg:"No se pudo conectar al servidor.");
+   e.status=response.status;throw e;
+  }
+  return json;
+ }catch(e){
+  if(e.name==="AbortError")throw Error("Se agotó el tiempo de conexión con Supabase. Reintenta o abre Futbolito en Safari.");
+  throw e;
+ }finally{clearTimeout(timer)}
+}
+let refreshPromise=null;
+async function validSession(){
+ const s=savedAuth();
+ if(!s)return null;
+ if(!Number(s.expires_at)||Number(s.expires_at)*1000>Date.now()+30000)return s;
+ if(!refreshPromise){
+  refreshPromise=supabaseRequest("auth/v1/token?grant_type=refresh_token",{
+   method:"POST",body:{refresh_token:s.refresh_token}
+  }).then(storeAuth).finally(()=>{refreshPromise=null});
+ }
+ try{return await refreshPromise}
+ catch(e){
+  if(e.status===400||e.status===401||e.status===403){forgetAuth();return null}
+  throw e;
+ }
+}
+async function currentUser(){
+ const session=await validSession();
+ if(!session)return null;
+ try{return await supabaseRequest("auth/v1/user",{token:session.access_token})}
+ catch(e){
+  if(e.status===401||e.status===403){forgetAuth();return null}
+  throw e;
+ }
+}
+const db={
+ auth:{
+  async getUser(){return {data:{user:await currentUser()},error:null}},
+  async getSession(){return {data:{session:await validSession()},error:null}},
+  async signInWithPassword({email,password}){
+   const s=await supabaseRequest("auth/v1/token?grant_type=password",{
+    method:"POST",body:{email,password},timeout:15000
+   });
+   storeAuth(s);return {data:{user:s.user,session:s},error:null};
+  },
+  async signOut(){
+   const token=savedAuth()?.access_token;
+   try{if(token)await supabaseRequest("auth/v1/logout",{method:"POST",token,timeout:5000})}
+   catch(e){/* Cerrar el acceso local aunque la red falle. */}
+   forgetAuth();return {error:null};
+  }
+ },
+ async rpc(name){
+  const session=await validSession();
+  if(!session)throw Error("Inicia sesión nuevamente.");
+  return {data:await supabaseRequest("rest/v1/rpc/"+name,{
+   method:"POST",token:session.access_token,body:{}
+  }),error:null};
+ },
+ from(table){
+  if(table!=="clubs")throw Error("Consulta de datos no autorizada.");
+  return {
+   select(columns){
+    if(columns!=="id,name,slug")throw Error("Campos no permitidos.");
+    return {
+     async order(field){
+      if(field!=="name")throw Error("Orden inválido.");
+      const session=await validSession();
+      if(!session)throw Error("Inicia sesión nuevamente.");
+      return {data:await supabaseRequest("rest/v1/clubs?select=id%2Cname%2Cslug&order=name.asc",{
+       token:session.access_token
+      }),error:null};
+     }
+    };
+   }
+  };
+ }
+};
 const $=id=>document.getElementById(id);
 let busy=false;
 /* Evitar esperas indefinidas por red, sesión caducada o bloqueos de almacenamiento. */
