@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0b1220">
 <title>Marcador Larraguibel · Modo Árbitro</title>
+<script>if(new URLSearchParams(location.search).get('acceso')==='prueba')document.documentElement.classList.add('auth-trial');</script>
+<style>html.auth-trial:not(.futbolito-unlocked) .app,html.auth-trial:not(.futbolito-unlocked) .float-timer,html.auth-trial:not(.futbolito-unlocked) .yellow-floats{visibility:hidden!important;pointer-events:none!important}</style>
+
 <style>
 :root{--bg:#0b1220;--panel:#141f31;--line:#2a3951;--text:#f7fafc;--muted:#aebbd0;--green:#31c48d;--blue:#60a5fa;--gold:#fbbf24;--red:#fb7185}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#1a2b45 0,#0b1220 62%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh;padding:14px}
@@ -433,7 +436,7 @@ body{background:radial-gradient(ellipse at top,#2a0f17 0%,#0b0a0c 62%)}
 <script>
 const DEFAULT_TEAMS = {"Larraguibel":[["1","Mathie"],["2","Jaime"],["3","Jota"],["4","Gaete"],["5","Danilo"],["6","Felipe"],["7","Usvaldo"],["8","Mati B"],["9","Seba"],["10","Basti"],["11","Nico"],["12","Maxi"],["13","Brian"],["14","Mario"],["15","Jesus"],["16","Dani"],["17","Cristian"]]};
 const $=id=>document.getElementById(id);
-const APP_STORAGE_KEY="marcadorLarraguibelControlV1";
+const APP_STORAGE_KEY=document.documentElement.classList.contains("auth-trial")?"futbolitoPrivateTestLarraguibel":"marcadorLarraguibelControlV1";
 let state = {
   teams: JSON.parse(JSON.stringify(DEFAULT_TEAMS)), period:1, elapsed:0, running:false, startedAt:0,
   scores:[0,0], periodFouls:[0,0], totalFouls:[0,0], cards:[], redCards:[], goals:[], awayName:"Rival", homeTeam:"Larraguibel", halfMinutes:25
@@ -901,5 +904,6 @@ render();
 <script src="../control-rapido.js" defer></script>
 <script src="../mejoras-20261016.js" defer></script>
 <script src="../personalizacion-v7.js?v=20261017-final" defer></script>
+<script src="../acceso/guard-trial.js?v=1" defer></script>
 </body>
 </html>
