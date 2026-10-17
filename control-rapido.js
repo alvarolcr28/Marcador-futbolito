@@ -56,6 +56,16 @@ const oldSetLastAction=setLastAction;
 setLastAction=function(message,undo){oldSetLastAction(message,undo);refreshQuick();};
 $('undoAction').addEventListener('click',()=>{refreshQuick();});
 $('resetBtn').addEventListener('click',()=>{refreshQuick();});
+// Usa el reinicio original: conserva su confirmación y evita duplicar reglas.
+const quickActionRow=document.querySelector('#quickBoard .quick-actions');
+if(quickActionRow&&!document.getElementById('quickReset')){
+ const reset=document.createElement('button');
+ reset.id='quickReset';reset.type='button';reset.className='btn quick-reset';
+ reset.title='Reiniciar el partido completo';reset.setAttribute('aria-label','Reiniciar partido; solicitar confirmación');
+ reset.textContent='↻ Reiniciar';
+ quickActionRow.appendChild(reset);
+ reset.addEventListener('click',()=>document.getElementById('resetBtn')?.click());
+}
 try{
  const wanted=new URLSearchParams(location.search).get('vista');
  const saved=sessionStorage.getItem(APP_STORAGE_KEY+'-view')||localStorage.getItem(APP_STORAGE_KEY+'-view');
