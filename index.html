@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0b1220">
 <title>Marcador de Futbolito · Modo Árbitro v5</title>
-<script>if(new URLSearchParams(location.search).get('acceso')==='prueba')document.documentElement.classList.add('auth-trial');</script>
+<script>document.documentElement.classList.add('auth-trial');</script>
 <style>html.auth-trial:not(.futbolito-unlocked) .app,html.auth-trial:not(.futbolito-unlocked) .float-timer,html.auth-trial:not(.futbolito-unlocked) .yellow-floats{visibility:hidden!important;pointer-events:none!important}</style>
 
 <style>
@@ -403,14 +403,14 @@ const DEFAULT_TEAMS = {
   "Mala Clase +30":[["1","Cris"],["2","Alexis"],["3","Pipe"],["4","Jaime"],["5","Nachito"],["6","Samir"],["7","Juanfran"],["8","Beto"],["9","Paine"],["10","Pipo"],["11","Seba"],["12","Mario"],["13","Basti"],["14","Cristian"],["15","Hans"],["16","Pipe castro"],["17","José"],["18","Audi"]]
 };
 const $=id=>document.getElementById(id);
-const APP_STORAGE_KEY=document.documentElement.classList.contains("auth-trial")?"futbolitoPrivateTestMala":"marcadorFutbolitoArbitroNuevo3";
+const APP_STORAGE_KEY="marcadorFutbolitoArbitroNuevo3";
 let state = {
   teams: JSON.parse(JSON.stringify(DEFAULT_TEAMS)), period:1, elapsed:0, running:false, startedAt:0,
   scores:[0,0], periodFouls:[0,0], totalFouls:[0,0], cards:[], redCards:[], goals:[], awayName:"Rival", homeTeam:"Mala Clase +30", halfMinutes:25
 };
 let interval=null;
 function save(){try{state.homeTeam=$("homeTeam")?.value||state.homeTeam;state.halfMinutes=Number($("halfMinutes")?.value)||25;localStorage.setItem(APP_STORAGE_KEY,JSON.stringify({...state,running:false,startedAt:0}));}catch(e){}}
-function load(){try{const raw=localStorage.getItem(APP_STORAGE_KEY)||(document.documentElement.classList.contains("auth-trial")?null:(localStorage.getItem("marcadorFutbolitoPreview3")||localStorage.getItem("marcadorFutbolitoDraft")));if(raw){const s=JSON.parse(raw);state={...state,...s,running:false,startedAt:0,teams:s.teams||JSON.parse(JSON.stringify(DEFAULT_TEAMS)),goals:s.goals||[],redCards:s.redCards||[],homeTeam:s.homeTeam||"Mala Clase +30",halfMinutes:s.halfMinutes||25};}}catch(e){}}
+function load(){try{const raw=localStorage.getItem(APP_STORAGE_KEY)||localStorage.getItem("marcadorFutbolitoPreview3")||localStorage.getItem("marcadorFutbolitoDraft");if(raw){const s=JSON.parse(raw);state={...state,...s,running:false,startedAt:0,teams:s.teams||JSON.parse(JSON.stringify(DEFAULT_TEAMS)),goals:s.goals||[],redCards:s.redCards||[],homeTeam:s.homeTeam||"Mala Clase +30",halfMinutes:s.halfMinutes||25};}}catch(e){}}
 function halfSeconds(){return Math.max(1,Math.min(90,Number($("halfMinutes").value)||25))*60;}
 function teamName(){return $("homeTeam").value;}
 function fmt(sec){sec=Math.max(0,Math.floor(sec));return String(Math.floor(sec/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0");}
@@ -871,6 +871,6 @@ render();
 <script src="./control-rapido.js" defer></script>
 <script src="./mejoras-20261016.js" defer></script>
 <script src="./personalizacion-v7.js?v=20261017-final" defer></script>
-<script src="./acceso/guard-trial.js?v=1" defer></script>
+<script src="./acceso/control-acceso.js?v=20261017" defer></script>
 </body>
 </html>
