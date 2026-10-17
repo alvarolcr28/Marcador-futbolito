@@ -1,0 +1,46 @@
+
+<div class="fhub-line">
+<strong>⚽ Preparar partido</strong>
+<p class="fhub-small">Elige un rival frecuente o escribe uno directamente en el marcador. Los campeonatos son opcionales.</p>
+<div class="fhub-grid">
+ <label class="fhub-field">Rivales registrados<select id="hubOpponentSelect"><option value="">Seleccionar rival</option></select></label>
+ <label class="fhub-field">Nuevo rival<input id="hubOpponentNew" maxlength="90" placeholder="Ej.: Hattrick"></label>
+</div>
+<div class="fhub-actions">
+ <button id="hubOpponentUse" class="btn primary">Cargar rival en marcador</button>
+ <button id="hubOpponentSave" class="btn">Guardar nuevo rival</button>
+</div>
+</div>
+<div class="fhub-line">
+<strong>🏆 Crear torneo o campeonato</strong>
+<div class="fhub-grid">
+ <label class="fhub-field">Nombre de campeonato<input id="hubCompNew" maxlength="110" placeholder="Ej.: Copa Mala Clase"></label>
+ <label class="fhub-field">Modalidad<select id="hubCompFormat">
+ <option value="amistoso">Serie de amistosos</option>
+ <option value="liga">Liga / todos contra todos</option>
+ <option value="grupos">Fase de grupos</option>
+ <option value="eliminacion">Playoffs / eliminación directa</option>
+ </select></label>
+</div>
+<div class="fhub-actions"><button id="hubCompSave" class="btn">Crear campeonato</button></div>
+<p class="fhub-small">Puedes organizar rondas, rivales y partidos programados. Las llaves de playoffs se cargan por ronda; el avance automático de ganadores vendrá en una etapa posterior.</p>
+</div>
+<div class="fhub-line">
+<strong>📅 Programación y rondas</strong>
+<label class="fhub-field">Campeonato activo<select id="hubCompSelect"><option value="">Sin campeonato · amistoso</option></select></label>
+<div class="fhub-grid">
+ <label class="fhub-field">Ronda o fecha<input id="hubRound" maxlength="90" value="Fecha 1" list="hubRoundExamples"></label>
+ <datalist id="hubRoundExamples"><option value="Fase de grupos"><option value="Octavos de final"><option value="Cuartos de final"><option value="Semifinal"><option value="Final"></datalist>
+ <label class="fhub-field">Rival<select id="hubFixtureOpponent"><option value="">Seleccionar rival</option></select></label>
+</div>
+<label class="fhub-field">Fecha programada (opcional)<input id="hubFixtureDate" type="datetime-local"></label>
+<div class="fhub-actions"><button id="hubFixtureSave" class="btn">Agregar partido programado</button></div>
+<div id="hubFixtureList" class="fhub-list"></div>
+</div>
+<div class="fhub-line">
+<strong>💾 Registrar y consultar resultados</strong>
+<p class="fhub-small">Cuando finalices un encuentro en el marcador, intentaremos guardarlo en Supabase. También puedes guardarlo manualmente.</p>
+<div class="fhub-actions"><button id="hubArchiveNow" class="btn primary">Guardar resultado del partido actual</button><button id="hubRefreshHistory" class="btn">Actualizar historial</button></div>
+<div id="hubHistoryList" class="fhub-list"></div>
+</div>
+<div id="hubTournamentStatus" class="fhub-status" role="status">Selecciona un equipo para cargar sus torneos.</div>
