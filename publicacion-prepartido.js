@@ -20,7 +20,7 @@
   <label class="fhub-field">Sede / cancha<input id="pgVenue" maxlength="70" placeholder="Cancha principal"></label>
   <label class="fhub-field">Texto opcional<input id="pgTagline" maxlength="54" placeholder="¡Nos vemos en la cancha!"></label>
   <label class="fhub-field">Formato<select id="pgFormat"><option value="post">Publicación 4:5</option><option value="story">Historia 9:16</option></select></label>
-  <label class="fhub-field">Estilo<select id="pgTheme"><option value="broadcast">SportCenter · TV deportiva</option><option value="stadium">Noche de estadio</option><option value="editorial">Editorial minimalista</option></select></label>
+  <label class="fhub-field">Estilo<select id="pgTheme"><option value="broadcast">Transmisión deportiva</option><option value="stadium">Noche de estadio</option><option value="editorial">Editorial minimalista</option></select></label>
  </div>
  <div class="pg-assets">
   <label class="fhub-field">📷 Fotografía de fondo<input id="pgBackground" type="file" accept="image/jpeg,image/png,image/webp"></label>
@@ -264,7 +264,8 @@
  }
  async function trySavedHomeLogo(){
   const slug=document.documentElement.dataset.club||"mala-clase";
-  const data=localStorage.getItem("futbolito-default-home-logo:"+slug);
+  let data=null;
+  try{data=localStorage.getItem("futbolito-default-home-logo:"+slug);}catch{return;}
   if(!data?.startsWith("data:image/"))return;
   try{
    const img=new Image();
@@ -334,7 +335,7 @@
   for(const key of Object.keys(defaults)){Object.assign(layers[key],defaults[key]);images[key]=null;}
   activeLayer="background";$("pgLayer").value=activeLayer;
   syncControls();status("");draw();
-  trySavedHomeLogo().then(draw);
+  trySavedHomeLogo().then(()=>draw()).catch(()=>draw());
  }
  for(const id of ["pgTitle","pgCompetition","pgHome","pgAway","pgDate","pgTime","pgVenue","pgTagline","pgFormat","pgTheme"]){
   $(id).addEventListener("input",()=>draw());
