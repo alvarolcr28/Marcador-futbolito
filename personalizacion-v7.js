@@ -30,7 +30,7 @@ const css=document.createElement('style');css.id='personalizationCss';css.textCo
 .ig-adv-grid label{display:block;font-size:12px;font-weight:750;color:#d9d5e2;margin-bottom:6px}
 .ig-adv-grid input,.ig-adv-grid select{width:100%;min-width:0;border:1px solid #75667e;border-radius:9px;padding:9px;background:#11131b;color:white;font:inherit}
 .ig-data-choices{display:flex;gap:12px;flex-wrap:wrap;padding:10px;background:#22232f;border-radius:10px;margin:9px 0}
-.ig-advanced-preview{display:block;width:min(100%,390px);height:auto;margin:10px auto;border-radius:9px;border:1px solid #78678a;background:#0d0f15;touch-action:none;cursor:grab}
+.ig-advanced-preview{display:block;width:min(100%,390px);height:auto;margin:10px auto;border-radius:9px;border:1px solid #78678a;background:#0d0f15;touch-action:pan-y;cursor:grab}
 .ig-slider-row{display:grid;grid-template-columns:94px minmax(0,1fr) 39px;gap:8px;align-items:center;margin:10px 0;font-size:12px}
 .ig-slider-row input{width:100%;accent-color:var(--green)}
 .ig-adv-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0 8px}
@@ -259,16 +259,17 @@ postDialog.innerHTML=`
  </div>
  <div class="ig-data-choices"><label><input id="advancedGoals" type="checkbox" checked>⚽ Goles</label><label><input id="advancedFouls" type="checkbox" checked>🚩 Faltas</label><label><input id="advancedYellows" type="checkbox" checked>🟨 Amarillas</label><label><input id="advancedReds" type="checkbox" checked>🟥 Rojas</label></div>
  <div class="ig-slider-row"><label for="advancedZoom">Zoom</label><input id="advancedZoom" type="range" min="100" max="250" value="100" step="5"><output id="advancedZoomValue">100%</output></div>
+ <div class="ig-slider-row"><label for="advancedRotate">Ángulo</label><input id="advancedRotate" type="range" min="-25" max="25" value="0" step="1"><output id="advancedRotateValue">0°</output></div>
  <div class="ig-slider-row"><label for="advancedPanX">Horizontal</label><input id="advancedPanX" type="range" min="-100" max="100" value="0"><output id="advancedPanXValue">0</output></div>
  <div class="ig-slider-row"><label for="advancedPanY">Vertical</label><input id="advancedPanY" type="range" min="-100" max="100" value="0"><output id="advancedPanYValue">0</output></div>
- <p class="ig-adv-help">Arrastra la fotografía sobre la imagen para ajustar su posición, o utiliza los controles.</p>
+ <p class="ig-adv-help">Con un dedo desplazas la página. Usa <strong>dos dedos</strong> para mover, ampliar o girar la foto. También puedes usar los controles.</p>
  <canvas id="advancedCanvas" width="1080" height="1920" class="ig-advanced-preview" aria-label="Vista previa editable para Instagram"></canvas>
  <div class="ig-adv-actions"><button type="button" id="advancedDownload" class="btn primary">⬇ Guardar PNG</button><button type="button" id="advancedShare" class="btn">↗ Compartir</button></div>
  <div class="ig-adv-status" id="advancedStatus" role="status"></div>
  <p class="ig-adv-help">Podrás publicar el archivo desde Instagram; compartirlo no equivale a publicarlo automáticamente.</p>`;
 document.body.appendChild(postDialog);
 const cv=el('advancedCanvas'),cx=cv.getContext('2d');
-let img=null,imgUrl='',panX=0,panY=0,zoom=1;
+let img=null,imgUrl='',panX=0,panY=0,zoom=1,rotation=0;
 let currentPhotoRect={x:0,y:160,w:1080,h:900};
 function textLine(txt,x,y,maxW,font=36,color='#fff',align='left',min=19,weight=850){
  cx.textAlign=align;cx.fillStyle=color;let sz=font;const t=String(txt??'');
@@ -293,10 +294,13 @@ function drawAdvancedPost(){
  currentPhotoRect={x:0,y:imgTop,w:W,h:photoHeight};
  if(img){
   const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
-  const ratio=Math.max(W/iw,photoHeight/ih)*zoom;
+  const rad=rotation*Math.PI/180,co=Math.abs(Math.cos(rad)),si=Math.abs(Math.sin(rad));
+  const ratio=Math.max((W*co+photoHeight*si)/iw,(photoHeight*co+W*si)/ih)*zoom;
   const dw=iw*ratio,dh=ih*ratio;
-  const dx=(dw-W)*(panX+1)/2,dy=(dh-photoHeight)*(panY+1)/2;
-  cx.save();cx.beginPath();cx.rect(0,imgTop,W,photoHeight);cx.clip();cx.drawImage(img,-dx,imgTop-dy,dw,dh);cx.restore();
+  const dx=(dw-W)*panX/2,dy=(dh-photoHeight)*panY/2;
+  cx.save();cx.beginPath();cx.rect(0,imgTop,W,photoHeight);cx.clip();
+  cx.translate(W/2,imgTop+photoHeight/2);cx.rotate(rad);
+  cx.drawImage(img,-dw/2-dx,-dh/2-dy,dw,dh);cx.restore();
  }else{
   cx.fillStyle='#293044';cx.fillRect(0,imgTop,W,photoHeight);
   textLine('📷 AGREGA TU FOTO',540,imgTop+photoHeight/2,800,53,'#d5c8e2','center');
@@ -347,40 +351,87 @@ function updateAdvanced(){
  catch(err){el('advancedStatus').textContent='No se pudo actualizar la imagen. Intenta con otra foto.';}
 }
 function updateSliders(){
- zoom=Number(el('advancedZoom').value)/100;panX=Number(el('advancedPanX').value)/100;panY=Number(el('advancedPanY').value)/100;
- el('advancedZoomValue').textContent=Math.round(zoom*100)+'%';
+ zoom=Number(el('advancedZoom').value)/100;panX=Number(el('advancedPanX').value)/100;panY=Number(el('advancedPanY').value)/100;rotation=Number(el('advancedRotate').value);
+ el('advancedZoomValue').textContent=Math.round(zoom*100)+'%';el('advancedRotateValue').textContent=Math.round(rotation)+'°';
  el('advancedPanXValue').textContent=el('advancedPanX').value;
  el('advancedPanYValue').textContent=el('advancedPanY').value;
  updateAdvanced();
 }
 const fields=['advancedTitle','advancedSubtitle','advancedFormat','advancedGoals','advancedFouls','advancedYellows','advancedReds'];
 for(const id of fields)el(id).addEventListener('input',updateAdvanced);
-for(const id of ['advancedZoom','advancedPanX','advancedPanY'])el(id).addEventListener('input',updateSliders);
-let touch=null;
-cv.addEventListener('pointerdown',e=>{
- const rect=cv.getBoundingClientRect();const y=(e.clientY-rect.top)*cv.height/rect.height;
- if(y<currentPhotoRect.y||y>currentPhotoRect.y+currentPhotoRect.h||!img)return;
- touch={x:e.clientX,y:e.clientY,sx:panX,sy:panY};cv.setPointerCapture(e.pointerId);
-});
-cv.addEventListener('pointermove',e=>{
- if(!touch||!img)return;
- const rect=cv.getBoundingClientRect(),dw=(img.naturalWidth||img.width)*Math.max(1080/(img.naturalWidth||img.width),currentPhotoRect.h/(img.naturalHeight||img.height))*zoom;
- const dh=(img.naturalHeight||img.height)*Math.max(1080/(img.naturalWidth||img.width),currentPhotoRect.h/(img.naturalHeight||img.height))*zoom;
- const dx=(e.clientX-touch.x)*1080/rect.width,dy=(e.clientY-touch.y)*cv.height/rect.height;
- panX=Math.min(1,Math.max(-1,touch.sx-2*dx/Math.max(1,dw-1080)));
- panY=Math.min(1,Math.max(-1,touch.sy-2*dy/Math.max(1,dh-currentPhotoRect.h)));
- el('advancedPanX').value=Math.round(panX*100);el('advancedPanY').value=Math.round(panY*100);
- el('advancedPanXValue').textContent=el('advancedPanX').value;el('advancedPanYValue').textContent=el('advancedPanY').value;
+for(const id of ['advancedZoom','advancedRotate','advancedPanX','advancedPanY'])el(id).addEventListener('input',updateSliders);
+
+/* Gestos: 1 dedo navega; 2 dedos editan. */
+const clampGesture=(n,min,max)=>Math.max(min,Math.min(max,n));
+let gesture=null,mouse=null;
+const touchDistance=(a,b)=>Math.hypot(b.clientX-a.clientX,b.clientY-a.clientY);
+const touchAngle=(a,b)=>Math.atan2(b.clientY-a.clientY,b.clientX-a.clientX)*180/Math.PI;
+const touchCenter=(a,b)=>({x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2});
+function updateGestureControls(){
+ el('advancedZoom').value=Math.round(zoom*100);
+ el('advancedRotate').value=Math.round(rotation);
+ el('advancedPanX').value=Math.round(panX*100);
+ el('advancedPanY').value=Math.round(panY*100);
+ el('advancedZoomValue').textContent=el('advancedZoom').value+'%';
+ el('advancedRotateValue').textContent=el('advancedRotate').value+'°';
+ el('advancedPanXValue').textContent=el('advancedPanX').value;
+ el('advancedPanYValue').textContent=el('advancedPanY').value;
  updateAdvanced();
+}
+function insidePhoto(clientY){
+ const box=cv.getBoundingClientRect(),yy=(clientY-box.top)*cv.height/Math.max(1,box.height);
+ return yy>=currentPhotoRect.y&&yy<=currentPhotoRect.y+currentPhotoRect.h;
+}
+function zoomDimensions(){
+ const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
+ const rad=rotation*Math.PI/180,c=Math.abs(Math.cos(rad)),s=Math.abs(Math.sin(rad));
+ const size=Math.max((cv.width*c+currentPhotoRect.h*s)/iw,(currentPhotoRect.h*c+cv.width*s)/ih)*zoom;
+ return {w:iw*size,h:ih*size};
+}
+cv.addEventListener('touchstart',event=>{
+ if(!img||event.touches.length!==2)return;
+ const p=touchCenter(event.touches[0],event.touches[1]);
+ if(!insidePhoto(p.y))return;
+ event.preventDefault();
+ gesture={p,dist:Math.max(12,touchDistance(event.touches[0],event.touches[1])),
+  angle:touchAngle(event.touches[0],event.touches[1]),panX,panY,zoom,rotation};
+},{passive:false});
+cv.addEventListener('touchmove',event=>{
+ if(!img||!gesture||event.touches.length!==2)return;
+ event.preventDefault();
+ const p=touchCenter(event.touches[0],event.touches[1]),box=cv.getBoundingClientRect();
+ zoom=clampGesture(gesture.zoom*touchDistance(event.touches[0],event.touches[1])/gesture.dist,1,2.5);
+ rotation=clampGesture(gesture.rotation+touchAngle(event.touches[0],event.touches[1])-gesture.angle,-25,25);
+ const {w,h}=zoomDimensions();
+ const dx=(p.x-gesture.p.x)*cv.width/Math.max(1,box.width);
+ const dy=(p.y-gesture.p.y)*cv.height/Math.max(1,box.height);
+ panX=clampGesture(gesture.panX-2*dx/Math.max(1,w-cv.width),-1,1);
+ panY=clampGesture(gesture.panY-2*dy/Math.max(1,h-currentPhotoRect.h),-1,1);
+ updateGestureControls();
+},{passive:false});
+cv.addEventListener('touchend',event=>{if(event.touches.length<2)gesture=null;},{passive:true});
+cv.addEventListener('touchcancel',()=>{gesture=null;},{passive:true});
+// Mouse: arrastrar; en pantallas táctiles nunca capturar un solo dedo.
+cv.addEventListener('pointerdown',event=>{
+ if(!img||event.pointerType!=='mouse'||event.button!==0||!insidePhoto(event.clientY))return;
+ mouse={x:event.clientX,y:event.clientY,panX,panY};cv.setPointerCapture(event.pointerId);
 });
-cv.addEventListener('pointerup',()=>touch=null);cv.addEventListener('pointercancel',()=>touch=null);
+cv.addEventListener('pointermove',event=>{
+ if(!mouse||!img||event.pointerType!=='mouse')return;
+ const box=cv.getBoundingClientRect(),dim=zoomDimensions();
+ panX=clampGesture(mouse.panX-2*(event.clientX-mouse.x)*cv.width/Math.max(1,box.width)/Math.max(1,dim.w-cv.width),-1,1);
+ panY=clampGesture(mouse.panY-2*(event.clientY-mouse.y)*cv.height/Math.max(1,box.height)/Math.max(1,dim.h-currentPhotoRect.h),-1,1);
+ updateGestureControls();
+});
+cv.addEventListener('pointerup',()=>{mouse=null;});
+cv.addEventListener('pointercancel',()=>{mouse=null;});
 el('advancedPhoto').addEventListener('change',e=>{
  const file=e.target.files?.[0];if(!file)return;
  if(!file.type.startsWith('image/')){el('advancedStatus').textContent='Selecciona una foto.';return;}
  if(file.size>25e6){el('advancedStatus').textContent='La foto es muy pesada; selecciona otra de menos de 25 MB.';return;}
  if(imgUrl)URL.revokeObjectURL(imgUrl);
  imgUrl=URL.createObjectURL(file);
- const candidate=new Image();candidate.onload=()=>{img=candidate;panX=panY=0;zoom=1;el('advancedZoom').value=100;el('advancedPanX').value=el('advancedPanY').value=0;updateSliders();URL.revokeObjectURL(imgUrl);imgUrl='';};
+ const candidate=new Image();candidate.onload=()=>{img=candidate;panX=panY=0;zoom=1;rotation=0;el('advancedZoom').value=100;el('advancedRotate').value=0;el('advancedPanX').value=el('advancedPanY').value=0;updateSliders();URL.revokeObjectURL(imgUrl);imgUrl='';};
  candidate.onerror=()=>{el('advancedStatus').textContent='Formato no compatible; prueba con JPG o PNG.';URL.revokeObjectURL(imgUrl);imgUrl='';};candidate.src=imgUrl;
 });
 if(igTrigger)igTrigger.onclick=()=>{
