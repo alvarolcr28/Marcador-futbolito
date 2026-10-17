@@ -132,6 +132,8 @@ async function transmit(){
 }
 setInterval(()=>{if(unlocked()&&Date.now()-lastServerCheck>11500)detect()},4000);
 setInterval(()=>{if(unlocked())transmit()},2300);
+// Publica el cambio de tiempo y el pitazo final sin esperar al siguiente ciclo.
+document.getElementById("periodBtn")?.addEventListener("click",()=>setTimeout(transmit,250));
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&unlocked())detect()});
 setTimeout(detect,1200);
 })();
