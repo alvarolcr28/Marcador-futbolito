@@ -164,16 +164,22 @@ document.head.append(gateStyle);
     if(client)await client.auth.signOut();
     signedOut();
   });
-  document.addEventListener("visibilitychange",()=>{
-    if(!document.hidden&&authorized&&client){
-      // Revalida el servidor al volver a usar la aplicación.
-      Promise.all([
+  async function revalidateAccess(){
+    if(!authorized||!client)return;
+    try{
+      const [authResult,clubResult]=await Promise.all([
         client.auth.getUser(),
         client.from("clubs").select("id").eq("slug",slug).maybeSingle()
-      ]).then(([authResult,clubResult])=>{
-        if(authResult.error||!authResult.data?.user||clubResult.error||!clubResult.data)signedOut();
-      }).catch(()=>signedOut());
-    }
+      ]);
+      if(authResult.error||!authResult.data?.user){signedOut();return;}
+      // Un error de red no es equivalente a una revocación.
+      if(!clubResult.error&&!clubResult.data)signedOut();
+    }catch(e){/* Sin red, volver a comprobar en el próximo ciclo. */}
+  }
+  // Comprobar periódicamente cancelaciones y vencimientos mientras la app está abierta.
+  setInterval(revalidateAccess,45000);
+  document.addEventListener("visibilitychange",()=>{
+    if(!document.hidden)revalidateAccess();
   });
   init();
 })();
