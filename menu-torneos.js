@@ -37,7 +37,7 @@ async function queryAll(){
   db.from("club_opponents").select("id,name").eq("club_id",club.id).order("name"),
   db.from("club_competitions").select("id,name,format,status").eq("club_id",club.id).order("created_at",{ascending:false}),
   db.from("competition_fixtures").select("id,competition_id,opponent_id,round_name,scheduled_at,status").order("created_at",{ascending:false}).limit(200),
-  db.from("match_history").select("id,competition_id,fixture_id,home_name,away_name,home_score,away_score,total_fouls,period_fouls,yellow_cards,red_cards,goals,half_minutes,ended_at").eq("club_id",club.id).order("ended_at",{ascending:false}).limit(80)
+  db.from("match_history").select("id,competition_id,fixture_id,home_name,away_name,home_score,away_score,total_fouls,period_fouls,yellow_cards,red_cards,goals,half_minutes,fouls_by_period,ended_at").eq("club_id",club.id).order("ended_at",{ascending:false}).limit(80)
  ]);
  for(const r of [o,c,f,h])if(r.error)throw r.error;
  opponents=o.data||[];competitions=c.data||[];
@@ -102,9 +102,11 @@ function renderHistory(){
   const sub=document.createElement("small");sub.textContent=localDate(match.ended_at)+" · "+(competitions.find(x=>x.id===match.competition_id)?.name||"Amistoso");
   row.append(heading,sub);
   const f=match.total_fouls||[0,0], pf=match.period_fouls||[0,0];
+  const fbp=match.fouls_by_period||[[0,0],[0,0]];
   const ys=match.yellow_cards||[],rs=match.red_cards||[],gs=match.goals||[];
   row.append(detailsLine("Faltas totales",f.join(" - ")),
-   detailsLine("Faltas del último tiempo",pf.join(" - ")),
+   detailsLine("Primer tiempo",Array.isArray(fbp[0])?fbp[0].join(" - "):"Sin detalle"),
+   detailsLine("Segundo tiempo",Array.isArray(fbp[1])?fbp[1].join(" - "):"Sin detalle"),
    detailsLine("Amarillas",ys.length+" registradas"),
    detailsLine("Rojas",rs.length+" registradas"));
   if(gs.length){
@@ -240,9 +242,20 @@ async function archive(manual=false){
   p_goals:state.goals||[],
   p_half_minutes:Number(state.halfMinutes)||25,
   p_competition:context.competitionId||null,
-  p_fixture:context.fixtureId||null
+  p_fixture:context.fixtureId||null,
+  p_fouls_by_period:[
+   Array.isArray(state.firstHalfFouls)?state.firstHalfFouls:
+      (hub().prefs().resetFouls!==false?[
+        Math.max(0,(state.totalFouls?.[0]||0)-(state.periodFouls?.[0]||0)),
+        Math.max(0,(state.totalFouls?.[1]||0)-(state.periodFouls?.[1]||0))
+      ]:[0,0]),
+   hub().prefs().resetFouls!==false?[...state.periodFouls]:[
+    Math.max(0,(state.totalFouls?.[0]||0)-(state.firstHalfFouls?.[0]||0)),
+    Math.max(0,(state.totalFouls?.[1]||0)-(state.firstHalfFouls?.[1]||0))
+   ]
+  ]
  };
- const r=await db.rpc("archive_match_result",data);
+ const r=await db.rpc("archive_match_with_period_fouls",data);
  if(r.error)throw r.error;
  if(mounted)await queryAll();
  message(r.data?.already_saved?
@@ -266,7 +279,7 @@ function wrapFinishAndReset(){
   reset.onclick=function(...args){
    const scores=state?.scores;
    const out=old.apply(this,args);
-   if(scores!==state.scores){state.archiveId=null;if(typeof save==="function")save();}
+   if(scores!==state.scores){state.archiveId=null;state.firstHalfFouls=null;if(typeof save==="function")save();}
    return out;
   };
  }
