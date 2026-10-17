@@ -44,7 +44,7 @@ document.head.append(gateStyle);
   clubSwitcher.setAttribute("aria-label","Cambiar de club");
   clubSwitcher.className="iconbtn";
   clubSwitcher.hidden=true;
-  clubSwitcher.style.cssText="display:grid;place-items:center;text-decoration:none;font-size:22px;min-width:40px;max-width:48px";
+  clubSwitcher.style.cssText="text-align:center;line-height:46px;text-decoration:none;font-size:22px;min-width:40px;max-width:48px";
   (document.querySelector(".top-actions")||document.body).appendChild(clubSwitcher);
 
   function showMessage(text, isError=false){
