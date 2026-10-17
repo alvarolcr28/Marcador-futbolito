@@ -47,3 +47,12 @@
 @media(max-width:420px){.quick-board{gap:7px}.quick-head{grid-template-columns:52px minmax(0,1fr) 87px;gap:5px;padding:9px 6px}.quick-pause{min-height:53px}.quick-time{font-size:clamp(31px,9vw,45px)}.quick-score{font-size:26px;padding:8px 3px}.quick-section{padding:9px}.quick-foul-buttons{grid-template-columns:46px minmax(0,1fr)}.quick-foul-buttons button{height:49px}.quick-goal{min-height:68px}.quick-card-col{padding:7px 5px}.quick-card-col>div{gap:4px}.quick-grid{gap:6px}}
 @media(max-width:345px){.quick-head{grid-template-columns:48px minmax(0,1fr) 74px}.quick-score{font-size:22px}.quick-time{font-size:29px;letter-spacing:-2px}.view-tab{font-size:12px}.quick-goal strong{font-size:12px}.quick-card-col button{font-size:10px}}
 @media(prefers-reduced-motion:no-preference){.quick-goal:active,.quick-card-col button:active,.quick-foul-buttons button:active{transform:scale(.97)}}
+
+/* Reinicio secundario al pie de Control rápido; blanco mínimo táctil seguro. */
+#quickBoard .quick-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+#quickBoard .quick-actions #quickReset{margin-left:auto;min-height:42px;padding:9px 12px;
+ font:800 12px/1.1 system-ui,sans-serif;border:1px solid #786276;border-radius:10px;
+ background:#2b2630;color:#f4b6bb;opacity:.90;box-shadow:none}
+#quickBoard .quick-actions #quickReset:hover{opacity:1;border-color:#ee9198}
+#quickBoard .quick-actions #quickReset:focus-visible{outline:3px solid #f7d889;outline-offset:3px}
+@media(max-width:375px){#quickBoard .quick-actions #quickReset{padding:9px 8px;font-size:11px}}
