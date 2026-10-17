@@ -24,7 +24,17 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .controls>*{flex:1 1 130px}
 .status{min-height:27px;color:var(--muted);margin:12px 0 0;font-size:13px;white-space:pre-line}
 .status.error{color:var(--red)}
-.cards{display:grid;gap:11px;margin-top:18px}
+.cards{display:grid;gap:11px;margin-top:14px}
+.club-finder{margin:4px 0 0}
+.search-label{font-size:13px;font-weight:850;display:block;margin-bottom:7px}
+.searchwrap{position:relative}
+.searchwrap:before{content:"⌕";position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#b8e2da;font-size:28px;line-height:1;pointer-events:none}
+.searchwrap input{padding-left:43px;padding-right:16px;margin-top:0;background:#0e1e2d;border-color:#658d91;border-radius:14px}
+.searchwrap input:focus{border-color:#8beccc;outline:2px solid #75e3b6;outline-offset:2px}
+.search-help{font-size:12px;color:var(--muted);margin:8px 0 1px}
+.results-meta{font-size:12px;color:#b9d3ce;min-height:18px;margin:8px 0 0}
+.show-more{width:100%;margin-top:12px;background:#213d48;border:1px solid #607d80;color:#d9f5ed;font-size:13px;min-height:44px}
+.no-matches{padding:17px 12px;border:1px dashed #59727f;border-radius:12px;color:var(--muted);font-size:13px;text-align:center;margin-top:12px}
 .club{display:block;padding:15px 16px;border:1px solid #54777b;background:#142f34;color:white;border-radius:13px;text-decoration:none;min-height:69px}
 .club strong{display:block;font-size:17px}.club small{color:#b7d9d3;font-size:12px}
 .club:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #e9db89;outline-offset:3px}
@@ -48,7 +58,17 @@ button:disabled{opacity:.5;cursor:not-allowed}
   </section>
   <section class="card" id="teamsBox" hidden>
     <div class="role" id="role"></div>
-    <div id="clubs" class="cards"></div>
+    <div class="club-finder">
+      <label class="search-label" for="clubSearch">Buscar equipo</label>
+      <div class="searchwrap">
+        <input id="clubSearch" type="search" placeholder="Escribe el nombre de un equipo…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" maxlength="80" aria-describedby="clubSearchHelp">
+      </div>
+      <p class="search-help" id="clubSearchHelp">Sugerencias instantáneas entre tus equipos autorizados. Pulsa Enter para abrir el primero.</p>
+      <p class="results-meta" id="clubResults" role="status" aria-live="polite"></p>
+    </div>
+    <div id="clubs" class="cards" aria-label="Equipos disponibles"></div>
+    <div class="no-matches" id="noClubs" hidden>No hay coincidencias entre tus equipos autorizados. Prueba con otro nombre.</div>
+    <button type="button" class="show-more" id="moreClubs" hidden>Ver todos los equipos</button>
     <div class="controls">
       <a class="secondary linkbtn" id="adminLink" href="../acceso/" style="display:grid;place-items:center;text-align:center;text-decoration:none" hidden>Administrar plantillas</a>
       <a class="secondary linkbtn" id="usersLink" href="../usuarios/" style="display:grid;place-items:center;text-align:center;text-decoration:none" hidden>Usuarios y permisos</a>
@@ -64,6 +84,65 @@ const db=createClient("https://cpqvrmorbwrrorrsobgj.supabase.co","sb_publishable
  {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const $=id=>document.getElementById(id);
 let busy=false;
+let visibleClubs=[], expanded=false, currentMatches=[];
+const MAX_PREVIEW=6;
+const normalize=text=>String(text??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("es").replace(/[^a-z0-9]+/g," ").trim().replace(/\s+/g," ");
+function matchRank(club,query){
+ if(!query)return 9;
+ const name=normalize(club.name), slug=normalize(club.slug);
+ if(name===query||slug===query)return 0;
+ if(name.startsWith(query))return 1;
+ if(name.split(" ").some(word=>word.startsWith(query)))return 2;
+ if(name.includes(query)||slug.includes(query))return 3;
+ const terms=query.split(" ");
+ if(terms.length>1 && terms.every(q=>name.split(" ").some(word=>word.startsWith(q))))return 4;
+ return -1;
+}
+function renderClubMatches(){
+ const query=normalize($("clubSearch").value);
+ const matches=visibleClubs.map(club=>({club,rank:matchRank(club,query)}))
+  .filter(item=>!query||item.rank>=0)
+  .sort((a,b)=>a.rank-b.rank||a.club.name.localeCompare(b.club.name,"es"))
+  .map(item=>item.club);
+ currentMatches=matches;
+ const limit=expanded?matches.length:MAX_PREVIEW;
+ const shown=matches.slice(0,limit),list=$("clubs");
+ list.replaceChildren();
+ for(const club of shown){
+  const path=safeRoute(club.slug);
+  const entry=document.createElement(path?"a":"div");
+  entry.className="club";
+  if(path)entry.href=path;
+  const name=document.createElement("strong");name.textContent=club.name;
+  const hint=document.createElement("small");
+  hint.textContent=path?"Abrir marcador →":"Club autorizado · aún no tiene marcador configurado";
+  entry.append(name,hint);
+  list.append(entry);
+ }
+ $("noClubs").hidden=matches.length>0||visibleClubs.length===0;
+ const more=$("moreClubs");
+ more.hidden=matches.length<=MAX_PREVIEW;
+ more.textContent=expanded?"Mostrar menos":"Ver los "+(matches.length-MAX_PREVIEW)+" equipos restantes";
+ const count=visibleClubs.length;
+ $("clubResults").textContent=query?
+  (matches.length?matches.length+" coincidencia"+(matches.length===1?"":"s")+" entre tus "+count+" equipos.":"Sin coincidencias entre tus "+count+" equipos."):
+  count+" equipo"+(count===1?"":"s")+" autorizado"+(count===1?"":"s")+(matches.length>MAX_PREVIEW&&!expanded?" · mostrando los primeros "+MAX_PREVIEW:"");
+}
+$("clubSearch").addEventListener("input",()=>{expanded=false;renderClubMatches()});
+$("clubSearch").addEventListener("keydown",event=>{
+ if(event.key==="Escape"&&$("clubSearch").value){
+  event.preventDefault();$("clubSearch").value="";expanded=false;renderClubMatches();return;
+ }
+ if(event.key==="ArrowDown"){
+  const first=$("clubs").querySelector("a.club");
+  if(first){event.preventDefault();first.focus()}return;
+ }
+ if(event.key==="Enter"&&$("clubSearch").value.trim()){
+  const first=$("clubs").querySelector("a.club");
+  if(first){event.preventDefault();first.click()}
+ }
+});
+$("moreClubs").addEventListener("click",()=>{expanded=!expanded;renderClubMatches()});
 const supported={ "mala-clase":"../", "larraguibel":"../larraguibel/" };
 function safeRoute(slug){return Object.prototype.hasOwnProperty.call(supported,slug)?supported[slug]:null}
 function message(text,error=false){$("status").textContent=text;$("status").classList.toggle("error",error)}
@@ -81,17 +160,10 @@ function showClubs(clubs,isGeneral,roles){
  $("role").textContent=isGeneral?"ADMINISTRADOR GENERAL":"ACCESO AUTORIZADO";
  $("adminLink").hidden=!isGeneral&&!roles.some(r=>r.role==="manager");
  $("usersLink").hidden=!isGeneral&&!roles.some(r=>r.role==="manager");
- const list=$("clubs");list.replaceChildren();
- for(const club of clubs){
-  const path=safeRoute(club.slug);
-  const label=document.createElement(path?"a":"div");
-  label.className="club";
-  if(path)label.href=path;
-  const heading=document.createElement("strong");heading.textContent=club.name;
-  const sub=document.createElement("small");
-  sub.textContent=path?"Entrar al marcador →":"Club autorizado · marcador pendiente de configurar";
-  label.append(heading,sub);list.append(label);
- }
+ visibleClubs=clubs;
+ expanded=false;
+ $("clubSearch").value="";
+ renderClubMatches();
  message(clubs.length?"Selecciona tu equipo.":"No tienes equipos asignados. Solicita acceso al administrador.",!clubs.length);
 }
 async function routeUser(){
