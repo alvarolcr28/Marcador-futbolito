@@ -34,7 +34,7 @@ try{
  async function loadExtension(path){
   await new Promise((resolve,reject)=>{
    const script=document.createElement("script");
-   script.src="/Marcador-futbolito/"+path+"?v=20261017-4";
+   script.src="/Marcador-futbolito/"+path+"?v=20261017-5";
    script.onload=resolve;
    script.onerror=()=>reject(Error("No se pudo cargar "+path));
    document.body.appendChild(script);
@@ -44,6 +44,7 @@ try{
  // de insertar los diálogos; antes no existen los botones QR ni torneos.
  await loadExtension("menu-qr.js");
  await loadExtension("menu-torneos.js");
+  await loadExtension("registro-jugadores.js");
  function closeOn(dialog,button){
   $(button).addEventListener("click",()=>dialog.close());
   dialog.addEventListener("click",e=>{if(e.target===dialog)dialog.close()});
