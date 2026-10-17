@@ -79,7 +79,11 @@ async function mount(){
   logoHome=record?.home_logo_url||null;logoAway=record?.away_logo_url||null;
   if(record){
    $("hubQrTitle").value=record.title||"Partido de Futbolito";
-   $("hubQrHours").value=record.access_hours||6;
+   const hoursSelect=$("hubQrHours");
+   const wanted=String(record.access_hours||6);
+   if(![...hoursSelect.options].some(o=>o.value===wanted))
+    hoursSelect.add(new Option(wanted+" horas",wanted));
+   hoursSelect.value=wanted;
    store();
   }
   buttons();
@@ -98,8 +102,8 @@ async function action(id,callback){
  }catch(e){status(e.message||"No se pudo completar el proceso.",true)}
  finally{busy=false;buttons()}
 }
-async function uploadImage(client,id){
- const file=$(id).files?.[0];if(!file)return null;
+async function uploadImage(client,id,overrideFile=null){
+ const file=$(id).files?.[0]||overrideFile;if(!file)return null;
  if(!["image/png","image/webp","image/jpeg"].includes(file.type)||file.size>1048576)
   throw Error("El escudo debe ser JPG, PNG o WebP y pesar hasta 1 MB.");
  const ext=file.type==="image/png"?"png":file.type==="image/webp"?"webp":"jpg";
@@ -108,11 +112,21 @@ async function uploadImage(client,id){
  if(response.error)throw response.error;
  return client.storage.from("futbolito-escudos").getPublicUrl(path).data.publicUrl;
 }
-async function saveAppearance(client){
+async function defaultHomeFile(){
+  try{
+   const encoded=localStorage.getItem("futbolito-default-home-logo:"+hub().slug);
+   if(!encoded||!/^data:image\/(png|jpeg|webp);base64,/.test(encoded))return null;
+   const response=await fetch(encoded),blob=await response.blob();
+   if(blob.size>1048576)return null;
+   return new File([blob],"escudo-local", {type:blob.type});
+  }catch(e){return null;}
+ }
+ async function saveAppearance(client){
  if(!record)throw Error("Prepara primero el QR.");
  const title=$("hubQrTitle").value.trim();
  if(!title||title.length>100)throw Error("El título debe contener entre 1 y 100 caracteres.");
- const newHome=await uploadImage(client,"hubLogoHome"),newAway=await uploadImage(client,"hubLogoAway");
+ const defaultFile=!logoHome&&!$("hubLogoHome").files?.length?await defaultHomeFile():null;
+ const newHome=await uploadImage(client,"hubLogoHome",defaultFile),newAway=await uploadImage(client,"hubLogoAway");
  const nextHome=newHome||logoHome,nextAway=newAway||logoAway;
  const response=await client.rpc("update_match_appearance",{
   p_id:record.id,p_title:title,
