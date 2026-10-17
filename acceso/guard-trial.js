@@ -26,6 +26,16 @@ document.head.append(gateStyle);
   const loginArea=$("sessionLoginArea");
   const actionArea=$("sessionActions");
   const who=$("sessionUser");
+  const exitButton=document.createElement("button");
+  exitButton.id="privateExit";
+  exitButton.className="iconbtn";
+  exitButton.type="button";
+  exitButton.textContent="Salir";
+  exitButton.title="Cerrar sesión privada";
+  exitButton.setAttribute("aria-label","Cerrar sesión privada");
+  exitButton.hidden=true;
+  exitButton.style.cssText="font:800 12px system-ui;min-width:48px;border:1px solid #bca0d8;background:#3e2e50;color:#fff";
+  (document.querySelector(".top-actions")||document.body).appendChild(exitButton);
   let client=null, authorized=false;
 
   function showMessage(text, isError=false){
@@ -36,6 +46,7 @@ document.head.append(gateStyle);
     authorized=false;
     document.documentElement.classList.remove("futbolito-unlocked");
     gate.hidden=false;
+    exitButton.hidden=true;
     loginArea.hidden=false;
     actionArea.hidden=true;
     who.textContent="";
@@ -45,6 +56,7 @@ document.head.append(gateStyle);
     authorized=true;
     document.documentElement.classList.add("futbolito-unlocked");
     gate.hidden=true;
+    exitButton.hidden=false;
     loginArea.hidden=true;
     actionArea.hidden=false;
     who.textContent=user?.email||"Usuario autorizado";
@@ -140,6 +152,7 @@ document.head.append(gateStyle);
     }finally{submit.disabled=false;}
   });
   $("sessionRetry").addEventListener("click",()=>client&&verify().catch(e=>showMessage(e.message,true)));
+  exitButton.addEventListener("click",async()=>{if(client)await client.auth.signOut();signedOut();});
   $("sessionLogout").addEventListener("click",async()=>{
     if(client)await client.auth.signOut();
     signedOut();
