@@ -22,7 +22,7 @@ function switchView(next){
  $('tabQuick').setAttribute('aria-selected',String(quick));
  $('tabFull').setAttribute('aria-selected',String(!quick));
  document.body.classList.toggle('quick-mode',quick);
- try{sessionStorage.setItem(APP_STORAGE_KEY+'-view',currentView);}catch(e){}
+ try{sessionStorage.setItem(APP_STORAGE_KEY+'-view',currentView);localStorage.setItem(APP_STORAGE_KEY+'-view',currentView);}catch(e){}
  window.scrollTo(0,0);
  if(window.updateFloating)window.updateFloating();
  refreshQuick();
@@ -58,10 +58,12 @@ $('undoAction').addEventListener('click',()=>{refreshQuick();});
 $('resetBtn').addEventListener('click',()=>{refreshQuick();});
 try{
  const wanted=new URLSearchParams(location.search).get('vista');
+ const saved=sessionStorage.getItem(APP_STORAGE_KEY+'-view')||localStorage.getItem(APP_STORAGE_KEY+'-view');
  if(wanted==='rapida')switchView('quick');
  else if(wanted==='completa')switchView('full');
- else if(sessionStorage.getItem(APP_STORAGE_KEY+'-view')==='quick')switchView('quick');
-}catch(e){}
+ else if(saved==='full')switchView('full');
+ else switchView('quick');
+}catch(e){switchView('quick');}
 refreshQuick();
 
 // Plantillas oficiales distribuidas por GitHub Pages.
