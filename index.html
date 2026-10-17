@@ -645,9 +645,30 @@ $("confirmYellow").onclick=()=>{
 };
 $("manageTeamsBtn").onclick=()=>{populateTeamSelectors(teamName(),teamName());renderRosterEditor();$("teamsDialog").showModal();};
 $("editTeamSelect").onchange=renderRosterEditor;
+function normalizedRosterNumber(input){
+ const raw=String(input??"").trim();
+ return /^\d{1,6}$/.test(raw)?String(Number(raw)):null;
+}
+function duplicateInRoster(players){
+ const seen=new Set();
+ for(const [number] of players){
+  const n=normalizedRosterNumber(number);
+  if(n===null)continue;
+  if(seen.has(n))return n;
+  seen.add(n);
+ }
+ return null;
+}
 $("rosterList").addEventListener("input",()=>{
  const key=$("editTeamSelect").value;
- state.teams[key]=[...$("rosterList").children].map(row=>[row._num.value.trim(),row._name.value.trim()]).filter(p=>p[1]);
+ const proposed=[...$("rosterList").children].map(row=>[row._num.value.trim(),row._name.value.trim()]).filter(p=>p[1]);
+ const duplicate=duplicateInRoster(proposed);
+ if(duplicate!==null){
+  alert("La camiseta "+duplicate+" ya está ocupada en la plantilla "+key+". Cada dorsal puede aparecer solo una vez por plantilla.");
+  renderRosterEditor();
+  return;
+ }
+ state.teams[key]=proposed;
  save();
 });
 function renderRosterEditor(){
@@ -680,12 +701,22 @@ $("deleteTeamBtn").onclick=()=>{
 $("addPlayerBtn").onclick=()=>{
  const num=$("newPlayerNumber").value.trim(),name=$("newPlayerName").value.trim(),team=$("editTeamSelect").value;
  if(!name){alert("Escribe el nombre del jugador.");return;}
- state.teams[team].push([num||String(state.teams[team].length+1),name]);
+ const used=new Set(state.teams[team].map(p=>normalizedRosterNumber(p[0])));
+ let available=1;while(used.has(String(available)))available++;
+ const dorsal=normalizedRosterNumber(num||String(available));
+ if(dorsal===null){alert("Ingresa un dorsal numérico de hasta 6 dígitos.");return;}
+ if(used.has(dorsal)){alert("La camiseta "+dorsal+" ya está asignada en "+team+". Elige otro dorsal.");return;}
+ state.teams[team].push([dorsal,name]);
  $("newPlayerNumber").value="";$("newPlayerName").value="";renderRosterEditor();
 };
 $("saveRosterBtn").onclick=()=>{
  const team=$("editTeamSelect").value;
- state.teams[team]=[...$("rosterList").children].map(r=>[r._num.value.trim(),r._name.value.trim()]).filter(p=>p[1]);
+ const proposed=[...$("rosterList").children].map(r=>[r._num.value.trim(),r._name.value.trim()]).filter(p=>p[1]);
+ const invalid=proposed.find(p=>normalizedRosterNumber(p[0])===null);
+ if(invalid){alert("Todos los jugadores deben tener un dorsal numérico de hasta 6 dígitos.");return;}
+ const duplicate=duplicateInRoster(proposed);
+ if(duplicate!==null){alert("La camiseta "+duplicate+" ya está asignada en "+team+". Corrige el dorsal duplicado.");return;}
+ state.teams[team]=proposed.map(([number,name])=>[normalizedRosterNumber(number),name]);
  save();populatePlayerSelect();$("teamsDialog").close();render();
 };
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>$(b.dataset.close).close());
