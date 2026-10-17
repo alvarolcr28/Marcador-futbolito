@@ -30,6 +30,20 @@ try{
  }
  window.FutbolitoHub={db,slug,getClub,prefs:()=>({...prefs}),
   notify:message=>{const e=$("hubQrStatus");if(e)e.textContent=message;}};
+
+ async function loadExtension(path){
+  await new Promise((resolve,reject)=>{
+   const script=document.createElement("script");
+   script.src="/Marcador-futbolito/"+path+"?v=20261017-3";
+   script.onload=resolve;
+   script.onerror=()=>reject(Error("No se pudo cargar "+path));
+   document.body.appendChild(script);
+  });
+ }
+ // Los controles del menú son dinámicos. Cargar sus módulos solo DESPUÉS
+ // de insertar los diálogos; antes no existen los botones QR ni torneos.
+ await loadExtension("menu-qr.js");
+ await loadExtension("menu-torneos.js");
  function closeOn(dialog,button){
   $(button).addEventListener("click",()=>dialog.close());
   dialog.addEventListener("click",e=>{if(e.target===dialog)dialog.close()});
