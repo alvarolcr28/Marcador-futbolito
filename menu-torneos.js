@@ -113,7 +113,7 @@ function renderHistory(){
    const g=document.createElement("div");g.className="fhub-small";
    g.textContent="Goles: "+gs.map(x=>(x.period===2?"2T ":"1T ")+
      Math.ceil(Number(x.elapsedAt||0)/60)+"′ "+(x.team==="home"?match.home_name:match.away_name)+
-     (x.scorer?" · "+x.scorer:"")).join("; ");
+     (x.scorer?" · "+x.scorer:"")+(x.assist&&x.team==="home"?" · 🅰 asistencia: "+x.assist:"")).join("; ");
    row.append(g);
   }
   if(ys.length||rs.length){
