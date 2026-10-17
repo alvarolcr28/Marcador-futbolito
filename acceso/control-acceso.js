@@ -36,6 +36,100 @@ document.head.append(gateStyle);
   exitButton.hidden=true;
   exitButton.style.cssText="font:800 12px system-ui;min-width:48px;border:1px solid #bca0d8;background:#3e2e50;color:#fff";
   (document.querySelector(".top-actions")||document.body).appendChild(exitButton);
+  function makeDirectClient(){
+  const base=URL_SUPABASE;
+  const key=CLAVE_PUBLICA;
+  const storageKey="sb-cpqvrmorbwrrorrsobgj-auth-token";
+  let refreshInFlight=null;
+  function saved(){
+    try{const s=JSON.parse(localStorage.getItem(storageKey)||"null");return s&&typeof s.access_token==="string"&&typeof s.refresh_token==="string"?s:null;}catch{return null;}
+  }
+  function forget(){try{localStorage.removeItem(storageKey);}catch{}}
+  function store(s){
+    if(!s?.access_token||!s?.refresh_token)throw Error("No se recibió una sesión válida.");
+    try{localStorage.setItem(storageKey,JSON.stringify({...s,expires_at:Number(s.expires_at)||Math.floor(Date.now()/1000)+Number(s.expires_in||3600)}));}
+    catch{throw Error("No es posible guardar la sesión en este navegador.");}
+    return saved();
+  }
+  async function send(path,{token,method="GET",body,timeout=12000}={}){
+    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeout);
+    try{
+      const headers={apikey:key,Accept:"application/json"};
+      if(token)headers.Authorization="Bearer "+token;
+      if(body!==undefined)headers["Content-Type"]="application/json";
+      const r=await fetch(base+"/"+path,{method,headers,cache:"no-store",signal:ctrl.signal,body:body===undefined?undefined:JSON.stringify(body)});
+      const raw=await r.text();
+      let data=null;try{data=raw?JSON.parse(raw):null;}catch{}
+      if(!r.ok){
+        const message=data?.msg||data?.message||data?.error_description||data?.error||("Respuesta HTTP "+r.status);
+        const e=new Error(typeof message==="string"?message:"No fue posible verificar el acceso.");
+        e.status=r.status;throw e;
+      }
+      return data;
+    }catch(e){
+      if(e.name==="AbortError")throw Error("Supabase tardó demasiado en responder. Prueba nuevamente o abre el enlace en Safari.");
+      throw e;
+    }finally{clearTimeout(timer);}
+  }
+  async function getSession(){
+    const current=saved();if(!current)return null;
+    if(!Number(current.expires_at)||current.expires_at*1000>Date.now()+30000)return current;
+    if(!refreshInFlight)refreshInFlight=send("auth/v1/token?grant_type=refresh_token",{method:"POST",body:{refresh_token:current.refresh_token}})
+      .then(store).finally(()=>{refreshInFlight=null;});
+    try{return await refreshInFlight;}
+    catch(e){if([400,401,403].includes(e.status)){forget();return null;}throw e;}
+  }
+  async function authenticated(path,opts={}){
+    const session=await getSession();
+    if(!session)throw Error("Tu sesión no está disponible. Vuelve a iniciar sesión.");
+    return send(path,{...opts,token:session.access_token});
+  }
+  function from(table){
+    if(!["clubs","squads","players"].includes(table))throw Error("Consulta no permitida.");
+    let columns="*",sort="",single=false;
+    const filters=[];
+    const builder={
+      select(names){columns=names;return this;},
+      eq(field,value){filters.push([field,"eq."+String(value)]);return this;},
+      in(field,values){filters.push([field,"in.("+values.join(",")+")"]);return this;},
+      order(field){sort=field+".asc";return this;},
+      maybeSingle(){single=true;return this;},
+      then(resolve,reject){
+        const params=new URLSearchParams({select:columns});
+        for(const [field,value] of filters)params.append(field,value);
+        if(sort)params.set("order",sort);
+        return authenticated("rest/v1/"+table+"?"+params.toString())
+          .then(rows=>({data:single?(rows?.[0]||null):rows,error:null}))
+          .then(resolve,reject);
+      }
+    };
+    return builder;
+  }
+  return {
+    auth:{
+      async getUser(){
+        const session=await getSession();
+        if(!session)return {data:{user:null},error:null};
+        try{return {data:{user:await send("auth/v1/user",{token:session.access_token})},error:null};}
+        catch(e){if([401,403].includes(e.status)){forget();return {data:{user:null},error:null};}throw e;}
+      },
+      async signInWithPassword({email,password}){
+        const session=await send("auth/v1/token?grant_type=password",{method:"POST",body:{email,password},timeout:15000});
+        store(session);return {error:null,data:{session,user:session.user}};
+      },
+      async signOut(){
+        const session=saved();
+        if(session){
+          try{await send("auth/v1/logout?scope=local",{method:"POST",token:session.access_token,timeout:5000});}catch{}
+        }
+        forget();return {error:null};
+      },
+      onAuthStateChange(){return {data:{subscription:{unsubscribe(){}}}};}
+    },
+    async rpc(name){return {data:await authenticated("rest/v1/rpc/"+name,{method:"POST",body:{}}),error:null};},
+    from
+  };
+}
   let client=null, authorized=false;
   const clubSwitcher=document.createElement("a");
   clubSwitcher.href="/Marcador-futbolito/inicio/";
@@ -139,13 +233,7 @@ document.head.append(gateStyle);
   }
   async function init(){
     try{
-      const {createClient}=await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/+esm");
-      client=createClient(URL_SUPABASE,CLAVE_PUBLICA,{
-        auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}
-      });
-      client.auth.onAuthStateChange((event)=>{
-        if(event==="SIGNED_OUT") signedOut();
-      });
+      client=makeDirectClient();
       await verify();
     }catch(error){
       lock("No fue posible validar el acceso. Comprueba tu conexión y vuelve a intentar.");
@@ -188,6 +276,9 @@ document.head.append(gateStyle);
       if(!clubResult.error&&!clubResult.data)signedOut();
     }catch(e){/* Sin red, volver a comprobar en el próximo ciclo. */}
   }
+  window.addEventListener("storage",e=>{
+    if(e.key==="sb-cpqvrmorbwrrorrsobgj-auth-token"&&!e.newValue)signedOut();
+  });
   // Comprobar periódicamente cancelaciones y vencimientos mientras la app está abierta.
   setInterval(revalidateAccess,45000);
   document.addEventListener("visibilitychange",()=>{
