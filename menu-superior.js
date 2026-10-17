@@ -115,10 +115,14 @@ try{
  if(periodBtn&&typeof periodBtn.onclick==="function"){
   const previousPeriod=periodBtn.onclick;
   periodBtn.onclick=function(...args){
-   const retain=typeof state!=="undefined"&&state.period===1&&prefs.resetFouls===false
+   const firstHalf=typeof state!=="undefined"&&state.period===1
     ?[...state.periodFouls]:null;
    const result=previousPeriod.apply(this,args);
-   if(retain&&state.period===2){state.periodFouls=retain;render();}
+   if(firstHalf&&state.period===2){
+    state.firstHalfFouls=firstHalf;
+    if(prefs.resetFouls===false)state.periodFouls=[...firstHalf];
+    render();
+   }
    return result;
   };
  }
