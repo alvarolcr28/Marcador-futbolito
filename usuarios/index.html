@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#171225">
+<title>Futbolito · Usuarios y permisos</title>
+<style>
+:root{color-scheme:dark;--bg:#0d111d;--panel:#1a2132;--panel2:#232a3f;--border:#485069;--text:#f5f3fa;--muted:#b9c0d0;--purple:#b48cf2;--gold:#efcd74;--red:#ff8896;--green:#8de8bd}
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;background:radial-gradient(circle at 10% 0%,#342341 0,transparent 45%),var(--bg);font:15px/1.5 system-ui,-apple-system,sans-serif;color:var(--text)}
+.wrap{max-width:1020px;margin:auto;padding:14px 12px 45px}header{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:5px 0 18px}
+.brand{font-size:clamp(19px,5vw,27px);font-weight:950;letter-spacing:-.5px}.caption{color:var(--muted);font-size:12px}
+nav{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0 18px}
+a{color:#dfc8ff}nav a{text-decoration:none;border:1px solid #74678a;border-radius:9px;padding:9px;font-size:12px;font-weight:700}
+.card{border:1px solid var(--border);border-radius:16px;background:#1b2132e8;padding:16px;margin:0 0 12px;box-shadow:0 12px 28px #0002}
+h1,h2,h3,p{margin-top:0}h1{font-size:23px;margin-bottom:6px}h2{font-size:19px;margin-bottom:9px}h3{font-size:15px;margin-bottom:8px}
+label{display:grid;gap:5px;font-size:12px;color:var(--muted);font-weight:800}
+input,select{width:100%;min-height:45px;border:1px solid #6b7390;border-radius:10px;padding:10px 12px;background:#0d1423;color:#fff;font:inherit}
+input:focus,select:focus{outline:2px solid #b48cf2}
+button{border:1px solid var(--border);border-radius:10px;background:#303a50;color:#fff;padding:10px 13px;font:850 14px system-ui;cursor:pointer;min-height:43px}
+button:disabled{opacity:.4;cursor:not-allowed}.primary{background:var(--purple);border-color:var(--purple);color:#1d112e}.danger{background:#4a2637;border-color:#ac6672}.warn{background:#53431d;border-color:#cba854;color:#fff2c8}
+.actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:12px}.actions button{flex:0 0 auto}.action-right{margin-left:auto}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px}
+.status{padding:10px 12px;background:#282438;border-left:4px solid var(--purple);color:#e8daf6;border-radius:9px;margin:12px 0;white-space:pre-line;overflow-wrap:anywhere;font-size:13px}.status.error{background:#3b222e;border-color:var(--red);color:#ffe3e7}
+.role{display:inline-block;padding:4px 9px;border-radius:999px;background:#3c3052;border:1px solid #826b9c;font-size:11px;font-weight:850;color:#eedcfa}
+.breadcrumb{font-size:12px;color:var(--muted)}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.stat{flex:1;min-width:130px;text-align:center;background:#11192b;border:1px solid var(--border);border-radius:11px;padding:10px}.stat strong{display:block;font-size:25px}.stat small{font-size:11px;color:var(--muted)}
+.entries{display:grid;gap:8px}.entry{border:1px solid #3e4960;border-radius:11px;padding:11px;background:#141c2c;overflow-wrap:anywhere}
+.entryHead{display:flex;justify-content:space-between;align-items:start;gap:10px}.entry strong{font-size:13px}.meta{font-size:12px;color:var(--muted);margin-top:4px}.entry .actions{margin-top:8px}.entry button{min-height:35px;padding:7px 10px;font-size:12px}
+.pill{display:inline-block;border:1px solid #686982;border-radius:9px;padding:3px 7px;font:800 11px system-ui;color:#ddd3e6}
+.pill.ok{border-color:#538a73;color:#a8f2d0}.pill.wait{border-color:#9e8556;color:#ffe3a1}.pill.off{border-color:#895763;color:#ffaab7}
+.note{font-size:12px;color:var(--muted);line-height:1.55}.link-result{padding:12px;background:#0d1b2d;border-radius:10px;border:1px solid #5b8b9e;overflow-wrap:anywhere;margin-top:12px}
+.link-result a{display:block;word-break:break-all;font-size:12px}.empty{color:var(--muted);font-size:13px;padding:12px}
+[hidden]{display:none!important}
+@media(max-width:720px){.grid{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr 1fr}.form-grid label:first-child{grid-column:1/-1}.wrap{padding:10px 9px 30px}.card{padding:14px}header{align-items:start}.brand{font-size:21px}}
+@media(max-width:360px){.form-grid{grid-template-columns:1fr}.form-grid label:first-child{grid-column:auto}.actions button{flex:1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+ <div><div class="brand">⚽ Futbolito <span style="color:var(--purple)">· Usuarios</span></div><div class="caption">Invitaciones, operadores, encargados y permisos por club</div></div>
+ <button id="logout" hidden>Salir</button>
+</header>
+<nav><a href="../acceso/">⚙️ Plantillas oficiales</a><a href="../">🟣 Mala Clase</a><a href="../larraguibel/">🔴 Larraguibel</a></nav>
+<section id="loginBox" class="card" style="max-width:510px;margin:36px auto">
+ <h1>🔐 Acceso a usuarios</h1>
+ <p class="note">Inicia sesión con tu correo y contraseña de Futbolito. Solo administradores generales y encargados de equipo.</p>
+ <form id="loginForm" style="display:grid;gap:12px">
+  <label>Correo<input id="email" type="email" autocomplete="username" required></label>
+  <label>Contraseña<input id="password" type="password" autocomplete="current-password" required></label>
+  <button class="primary" id="loginButton" type="submit">Iniciar sesión</button>
+ </form>
+ <div class="status" id="loginStatus" role="status">Comprobando sesión…</div>
+</section>
+<div id="dashboard" hidden>
+ <section class="card">
+  <div class="breadcrumb" id="identity"></div>
+  <h1>Administración de accesos <span id="rolePill" class="role"></span></h1>
+  <div class="grid">
+   <label>Equipo que deseas gestionar<select id="clubSelect"></select></label>
+   <div><div class="caption">Regla de delegación</div><strong>2 operadores activos o invitados por equipo</strong><p class="note" style="margin-top:5px">Las solicitudes siguientes pasan al administrador general.</p></div>
+  </div>
+  <div class="stats">
+   <div class="stat"><strong id="statOperators">–</strong><small>Operadores activos</small></div>
+   <div class="stat"><strong id="statReserved">–</strong><small>Invitaciones reservadas</small></div>
+   <div class="stat"><strong id="statPending">–</strong><small>Pendientes de aprobación</small></div>
+  </div>
+ </section>
+ <section class="card">
+  <h2>➕ Invitar a una persona</h2>
+  <p class="note">La persona creará su propia contraseña y verificará el correo. Comparte con ella el enlace que aparezca después de autorizarla. El enlace caduca a los 7 días.</p>
+  <form id="inviteForm">
+   <div class="form-grid">
+    <label>Correo electrónico<input id="inviteEmail" type="email" placeholder="jugador@correo.cl" required></label>
+    <label>Tipo de permiso<select id="inviteRole"><option value="operator">Operador de partido</option><option value="manager">Encargado de equipo</option></select></label>
+    <label>Vigencia del acceso<select id="inviteDays"><option value="1">1 día</option><option value="7" selected>7 días</option><option value="15">15 días</option><option value="30">30 días</option><option value="90">90 días</option><option value="">Permanente</option></select></label>
+   </div>
+   <div class="actions"><button class="primary" type="submit" id="inviteButton">Solicitar o autorizar acceso</button></div>
+  </form>
+  <div id="inviteResult" hidden class="link-result"></div>
+ </section>
+ <div class="grid">
+  <section class="card">
+   <h2>🕓 Solicitudes e invitaciones</h2>
+   <p class="note">Las solicitudes pendientes requieren tu revisión cuando se superan los dos cupos del encargado. Puedes renovar un enlace perdido o cancelar una invitación.</p>
+   <div id="requests" class="entries"></div>
+  </section>
+  <section class="card">
+   <h2>👥 Usuarios autorizados</h2>
+   <p class="note">Los accesos vencidos o suspendidos no permiten consultar las plantillas ni utilizar el marcador. El administrador general conserva el control sobre los encargados.</p>
+   <div id="members" class="entries"></div>
+  </section>
+ </div>
+ <div class="status" id="dashboardStatus" role="status">Cargando permisos…</div>
+</div>
+</div>
+<script type="module" src="./panel.js?v=20261017"></script>
+</body>
+</html>
