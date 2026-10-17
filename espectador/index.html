@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080b15">
+<meta name="description" content="Sigue el resultado de Futbolito en vivo. Marcador público de solo lectura.">
+<title>Futbolito · Marcador en vivo</title>
+<style>
+:root{color-scheme:dark;--bg:#080d18;--panel:#101826;--line:#2a3851;--purple:#b683f9;--red:#ff4b64;--muted:#a9bad3;--white:#f7f8ff}
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;font:15px/1.42 system-ui,-apple-system,Segoe UI,sans-serif;color:var(--white);background:radial-gradient(ellipse 75% 28% at 14% 20%,#40216d77,transparent),radial-gradient(ellipse 75% 30% at 88% 35%,#781b2b55,transparent),linear-gradient(#070d1a,#0b1525 75%,#07101e)}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.28;background:repeating-linear-gradient(125deg,transparent 0 85px,#283c581d 86px 87px),radial-gradient(ellipse 70% 38% at 50% 110%,#4b6680aa,transparent);z-index:0}
+.wrap{max-width:850px;margin:auto;padding:22px 16px 48px;position:relative;z-index:1}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 35px}.brand{font-size:23px;font-weight:950;letter-spacing:-1.1px}.spectator{display:flex;align-items:center;gap:7px;padding:8px 12px;border:1px solid #8859cc;border-radius:999px;background:#201334cf;box-shadow:0 0 15px #6522af44;font-size:12px;font-weight:800}
+.spectator svg{width:17px;height:17px}.title{text-align:center;color:#d6dbea;letter-spacing:4px;font-weight:800;font-size:clamp(13px,3vw,19px);margin:0 0 18px;word-break:break-word}
+.status-line{text-align:center;color:var(--muted);font-size:12px;min-height:20px}.status-line .live{display:inline-block;width:8px;height:8px;border-radius:50%;background:#1ae78a;margin-right:6px;box-shadow:0 0 7px #1ae78a}
+.scoreboard{display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,1.12fr) minmax(0,1fr);align-items:center;gap:8px;margin:21px 0 15px}
+.team{min-width:0;text-align:center}.badge{width:clamp(78px,19vw,148px);height:clamp(78px,19vw,148px);border-radius:23px;display:grid;place-items:center;margin:auto auto 13px;overflow:hidden;border:2px solid transparent;box-shadow:0 0 27px #8457d244}.home .badge{border-color:#9050de;background:radial-gradient(circle at center,#5c1bbf,#150928)}.away .badge{border-color:#bf2640;background:radial-gradient(circle at center,#941729,#1e0810);box-shadow:0 0 27px #e3333844}
+.badge .letters{font-size:clamp(26px,7vw,50px);font-weight:1000;letter-spacing:-2px}.badge img{width:100%;height:100%;object-fit:contain}
+.team-name{border:1px solid #563075;background:#170e23e0;color:white;padding:10px 4px;font-weight:850;border-radius:10px;min-height:46px;overflow-wrap:anywhere;font-size:clamp(12px,2.9vw,17px)}
+.away .team-name{border-color:#8d2942;background:#250c13eb}
+.score{font-size:clamp(44px,10.4vw,94px);font-weight:1000;text-align:center;white-space:nowrap;letter-spacing:-2.5px;font-variant-numeric:tabular-nums;line-height:1.03;text-shadow:0 0 35px #a86cff65}.score .left{color:#d5a4ff}.score .right{color:#ff7e90}.score .dash{color:#fff;margin:0 .05em}
+.status-box{text-align:center;margin:18px auto 23px;background:#0a1220e8;border:1px solid #2b4760;border-radius:18px;padding:12px 20px;max-width:310px;box-shadow:0 10px 32px #0005}
+.status-box .period{color:#c8cfde;font-size:14px}.status-box .clock{font-size:clamp(38px,8vw,60px);font-weight:950;letter-spacing:-1px;font-variant-numeric:tabular-nums;line-height:1.2}.status-box small{color:#b4c0d6}
+.status-box.finished{border-color:#d2ab46;box-shadow:0 0 24px #c79a2f23}.status-box.finished .period{color:#f8d67a;font-weight:850;font-size:18px}.status-box.finished .clock{font-size:22px;color:#fff}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.stat{min-width:0;border:1px solid #2b3d56;background:#091421e8;border-radius:16px;padding:12px 5px;text-align:center}.stat .emoji{font-size:23px}.stat .label{font-size:12px;color:#b5c3d5;margin-top:5px}.stat .value{font-size:clamp(21px,5.3vw,34px);font-weight:900;font-variant-numeric:tabular-nums;margin-top:4px}.stat .value span:nth-child(1){color:#c69aff}.stat .value span:nth-child(2){color:#ff6c7b}
+.panel{border:1px solid #2a3b56;border-radius:18px;padding:18px 14px;background:#0a1321eb;margin-top:17px}.panel h2{margin:0 0 13px;font-size:18px}.event{background:#111c2b;border:1px solid #22304a;border-left:4px solid #a56ae4;border-radius:12px;margin:9px 0;display:flex;align-items:center;gap:12px;padding:13px 12px}.event.yellow{border-left-color:#ffe02f}.event.red{border-left-color:#ff4b5b}.event .minute{background:#1d2a3a;padding:8px 6px;border-radius:9px;flex:0 0 45px;text-align:center;font-weight:850}.event .event-icon{font-size:22px}.event .event-label{font-size:14px;font-weight:850;overflow-wrap:anywhere}.event .event-sub{color:var(--muted);font-size:12px}.no-events{color:var(--muted);padding:18px;text-align:center;font-size:13px}
+footer{text-align:center;color:#b7c2d7;margin-top:25px;font-size:13px;line-height:1.7}.note{color:#b9bfd5;font-size:12px;text-align:center;line-height:1.5}
+#notification{position:fixed;inset:0;z-index:100;pointer-events:none;display:grid;place-items:center;background:#090e18bd;backdrop-filter:blur(5px);animation:appear .35s ease}
+#notification[hidden]{display:none!important}
+.announce{text-align:center;border:2px solid var(--accent,#b983ff);border-radius:25px;padding:26px 22px;width:min(92%,680px);background:radial-gradient(ellipse at 50% 0,var(--glow,#6230ac),#0d111deb 72%);box-shadow:0 0 68px var(--glow,#a153fa),inset 0 0 40px #0009;animation:pop .45s cubic-bezier(.1,1.8,.4,1)}
+.announce .announce-ico{font-size:72px;line-height:1.3;filter:drop-shadow(0 0 18px var(--accent,#a56bef))}
+.announce h1{font-size:clamp(34px,9vw,66px);margin:0;letter-spacing:-1.7px;text-shadow:0 0 30px var(--accent,#b983ff)}.announce p{font-size:19px;font-weight:800;margin:6px 0 0}
+#notification.yellow{--accent:#ffe244;--glow:#655009}#notification.red{--accent:#ff5667;--glow:#66172a}#notification.goal{--accent:#d59dff;--glow:#4a168d}
+#message{padding:24px;border-radius:14px;border:1px solid #685781;background:#17192bdd;text-align:center;margin-top:12vh}#message[hidden]{display:none!important}#content[hidden]{display:none!important}#message h2{margin:0 0 10px}#message p{color:#bec8d9}
+@keyframes pop{0%{transform:scale(.45) rotate(-5deg);opacity:0}75%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}@keyframes appear{from{opacity:0}to{opacity:1}}
+@media(max-width:480px){.wrap{padding:15px 10px 32px}header{margin-bottom:24px}.brand{font-size:19px}.spectator{font-size:11px;padding:7px}.title{letter-spacing:2px}.team-name{padding:8px 2px}.scoreboard{gap:4px}.panel{padding:13px 10px}.event{gap:8px;padding:10px 7px}.status-box{margin:15px auto 19px}.stat .label{font-size:11px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="brand">⚽ FUTBOLITO</div><div class="spectator">◉ Modo espectador</div></header>
+<div id="message" role="status"><h2>Conectando al partido…</h2><p>Comprobando el enlace y la transmisión.</p></div>
+<main id="content" hidden aria-label="Marcador público de solo lectura">
+ <div id="tournamentTitle" class="title">PARTIDO DE FUTBOLITO</div>
+ <div class="status-line" id="availability">Esperando actualizaciones…</div>
+ <section class="scoreboard" aria-label="Resultado del encuentro">
+  <div class="team home"><div class="badge" id="homeBadge"><span class="letters">⚽</span></div><div class="team-name" id="homeTeam">Local</div></div>
+  <div class="score"><span class="left" id="scoreHome">0</span><span class="dash">-</span><span class="right" id="scoreAway">0</span></div>
+  <div class="team away"><div class="badge" id="awayBadge"><span class="letters">⚽</span></div><div class="team-name" id="awayTeam">Visitante</div></div>
+ </section>
+ <div id="statusBox" class="status-box">
+  <div class="period" id="period">Primer tiempo</div>
+  <div class="clock" id="clock">00:00</div>
+  <small id="clockState">Marcador en vivo</small>
+ </div>
+ <div class="stats">
+  <div class="stat"><div class="emoji">📣</div><div class="label">Faltas (tiempo)</div><div class="value" id="fouls"><span>0</span> - <span>0</span></div></div>
+  <div class="stat"><div class="emoji">🟨</div><div class="label">Amarillas</div><div class="value" id="yellows"><span>0</span> - <span>0</span></div></div>
+  <div class="stat"><div class="emoji">🟥</div><div class="label">Rojas</div><div class="value" id="reds"><span>0</span> - <span>0</span></div></div>
+ </div>
+ <section class="panel"><h2>◷ Eventos del partido</h2><div id="events" aria-live="off"><div class="no-events">Todavía no hay eventos registrados.</div></div></section>
+ <footer id="footer">◉ Vista de solo lectura<br><span class="note">Aquí puedes seguir el marcador, pero no realizar cambios.</span></footer>
+</main>
+</div>
+<div id="notification" hidden role="status" aria-live="assertive"><div class="announce"><div id="announceIcon" class="announce-ico"></div><h1 id="announceTitle"></h1><p id="announcePlayer"></p></div></div>
+<script type="module" src="./visor.js?v=1"></script>
+</body>
+</html>
