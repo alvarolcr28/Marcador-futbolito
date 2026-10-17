@@ -174,7 +174,7 @@
   label($("pgHome").value||"LOCAL",W*.265,headingY+4,W*.42,43,"#fff","center",930);
   label($("pgAway").value||"VISITA",W*.735,headingY+4,W*.42,43,"#fff","center",930);
   // Datos de la jornada, siempre editables.
-  const footerY=H*.78;
+  const footerY=H===1350?H*.73:H*.78;
   cx.fillStyle="#081320ef";round(66,footerY,948,H-footerY-71,19);cx.fill();
   cx.fillStyle=c;cx.fillRect(97,footerY+23,886,6);
   let dateStr="FECHA POR CONFIRMAR";
@@ -330,6 +330,7 @@
   $("pgFormat").value="post";
   $("pgTheme").value="broadcast";
   $("pgBackground").value="";$("pgLogoHome").value="";$("pgLogoAway").value="";
+  $("pgHomeLogoInfo").textContent="Si guardaste un escudo local en Ajustes, se cargará automáticamente. Sin imagen aparecen las iniciales.";
   for(const key of Object.keys(defaults)){Object.assign(layers[key],defaults[key]);images[key]=null;}
   activeLayer="background";$("pgLayer").value=activeLayer;
   syncControls();status("");draw();
