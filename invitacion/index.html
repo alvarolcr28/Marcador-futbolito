@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#1b1424">
+<title>Futbolito · Activar invitación</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{background:radial-gradient(circle at 0 -10%,#3a2350,#111725 55%);min-height:100dvh;color:#f6f3fb;font:15px/1.5 system-ui,-apple-system,sans-serif;margin:0;padding:12px}
+.wrap{max-width:480px;margin:8vh auto 2vh;background:#1d2434;border:1px solid #665b7a;padding:22px;border-radius:19px;box-shadow:0 15px 40px #0004}
+h1{margin:0 0 8px;font-size:25px}h2{font-size:18px;margin:18px 0 7px}
+p{color:#c4c1d2}label{font-size:13px;color:#cfcae0;font-weight:850;display:grid;gap:5px;margin:13px 0}
+input{background:#0c1220;color:#fff;border:1px solid #80748f;border-radius:10px;width:100%;padding:12px;min-height:47px;font:inherit}
+button{padding:11px 15px;border:1px solid #655a78;border-radius:11px;background:#333f59;color:white;font:850 14px system-ui;min-height:47px;cursor:pointer}
+button.primary{background:#b88bec;color:#20102b;border-color:#b88bec}button:disabled{opacity:.45}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}.actions button{flex:1}
+.status{background:#29253a;border-radius:10px;border-left:4px solid #b88bec;padding:11px;margin:15px 0;white-space:pre-line;font-size:13px;overflow-wrap:anywhere}
+.status.error{border-left-color:#ff8f9f;background:#3c2632}
+.helper{font-size:12px;color:#bcb8ca}a{color:#e1caff}.success{border:1px solid #4c9972;background:#162c27;padding:12px;border-radius:9px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div style="font-size:35px">⚽🔑</div><h1>Invitación a Futbolito</h1>
+<p>Cada persona utiliza su propia cuenta. El encargado o administrador te habrá enviado un enlace personal de acceso.</p>
+<div id="status" class="status">Comprobando invitación…</div>
+<section id="noToken" hidden>
+ <p>No se encontró el código de invitación. Abre el enlace original que te enviaron por WhatsApp.</p>
+</section>
+<section id="guest" hidden>
+ <h2>Crear cuenta o ingresar</h2>
+ <label>Correo al que se emitió la invitación<input type="email" id="email" autocomplete="username" placeholder="nombre@correo.cl"></label>
+ <label>Contraseña<input type="password" id="password" autocomplete="new-password" minlength="8"></label>
+ <div class="actions"><button id="login" class="primary">Ya tengo cuenta · Ingresar</button><button id="signup">Crear mi cuenta</button></div>
+ <p class="helper">Si creas una cuenta nueva, confirma el correo que recibirás. Después vuelve a abrir el enlace original para activar el acceso. No compartas tu contraseña.</p>
+</section>
+<section id="signed" hidden>
+ <h2>Cuenta verificada</h2>
+ <p id="who"></p>
+ <button id="redeem" class="primary" style="width:100%">Aceptar invitación y activar acceso</button>
+ <div class="actions"><button id="signout">Usar otra cuenta</button></div>
+</section>
+<section id="activated" hidden>
+ <div class="success"><strong>✅ Acceso activado</strong><p id="activatedDescription"></p><a id="openMatch" href="../">Abrir el marcador</a></div>
+</section>
+<p class="helper"><a href="../usuarios/">Gestión de accesos</a> · <a href="../acceso/">Plantillas oficiales</a></p>
+</div>
+<script type="module" src="./activar.js?v=20261017"></script>
+</body></html>
