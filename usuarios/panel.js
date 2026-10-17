@@ -140,14 +140,16 @@ function renderRequests(requests){
     })
    );
   }
-  if(r.status==="approved"&&new Date(r.invitation_expires_at)>new Date()){
+  if(r.status==="approved"&&new Date(r.invitation_expires_at)>new Date()&&
+     (isPlatformAdmin||r.requested_by===viewer.id)){
    actions.append(createButton("Generar nuevo enlace","",async()=>{
     if(!confirm("¿Invalidar el enlace anterior y crear uno nuevo para "+r.email+"?"))return;
     const {data,error}=await db.rpc("rotate_invitation",{p_request_id:r.id});
     if(error)throw error;showInvitation(data.token,r.requested_role);await refreshData();
    }));
   }
-  if(r.status==="approved"||r.status==="pending"){
+  if((r.status==="approved"||r.status==="pending")&&
+     (isPlatformAdmin||r.requested_by===viewer.id)){
    actions.append(createButton("Cancelar","danger",async()=>{
     if(!confirm("¿Cancelar la invitación o solicitud de "+r.email+"?"))return;
     const {error}=await db.rpc("cancel_operator_request",{p_request_id:r.id});
