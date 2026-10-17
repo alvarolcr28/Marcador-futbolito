@@ -49,8 +49,9 @@ try{
   $(button).addEventListener("click",()=>dialog.close());
   dialog.addEventListener("click",e=>{if(e.target===dialog)dialog.close()});
  }
- const share=$("fHubShare"),settings=$("fHubSettings"),qr=$("fHubQr");
+ const share=$("fHubShare"),settings=$("fHubSettings"),qr=$("fHubQr"),summary=$("fHubSummaryPreview");
  closeOn(share,"hubShareClose");closeOn(settings,"hubSettingsClose");closeOn(qr,"hubQrClose");
+ closeOn(summary,"hubSummaryClose");
  const gear=document.createElement("button");
  gear.id="fHubSettingsButton";gear.type="button";gear.className="iconbtn";
  gear.textContent="⚙";gear.title="Ajustes";gear.setAttribute("aria-label","Abrir ajustes");
@@ -64,10 +65,40 @@ try{
   moveOriginalSettings();
   settings.showModal();
  });
+ // El resumen solo ocupa pantalla después de pulsar Compartir.
+ let summaryIsExample=false;
+ function matchHasData(){
+  return typeof state!=="undefined"&&(state.running||state.elapsed>0||state.period>1||
+   state.goals?.length||state.cards?.length||state.redCards?.length||
+   state.scores?.some(x=>x>0)||state.totalFouls?.some(x=>x>0));
+ }
+ function updateSummaryPreview(){
+  const hasData=matchHasData();
+  $("hubSummaryLabel").textContent=summaryIsExample?
+   "Ejemplo ficticio: estos números NO pertenecen a un partido real.":
+   (hasData?"Mensaje con los registros reales del partido.":"Aún no hay partido registrado. Puedes revisar un ejemplo ficticio.");
+  $("hubSummaryText").textContent=summaryIsExample?
+   (typeof formatMatchSummary==="function"&&typeof exampleMatch!=="undefined"?formatMatchSummary(exampleMatch):"Ejemplo no disponible."):
+   (typeof currentSummary==="function"?currentSummary():"Resumen no disponible.");
+  $("hubSendSummary").disabled=summaryIsExample||!hasData;
+  $("hubViewActual").classList.toggle("primary",!summaryIsExample);
+  $("hubViewExample").classList.toggle("primary",summaryIsExample);
+ }
  $("hubSummary").addEventListener("click",()=>{
-  share.close();
+  share.close();summaryIsExample=!matchHasData();
+  updateSummaryPreview();summary.showModal();
+ });
+ $("hubViewActual").addEventListener("click",()=>{summaryIsExample=false;updateSummaryPreview()});
+ $("hubViewExample").addEventListener("click",()=>{summaryIsExample=true;updateSummaryPreview()});
+ $("hubCopySummary").addEventListener("click",async()=>{
+  try{await navigator.clipboard.writeText($("hubSummaryText").textContent);$("hubCopySummary").textContent="✓ Copiado";setTimeout(()=>$("hubCopySummary").textContent="Copiar texto",1500)}
+  catch(e){alert("Selecciona el texto de la vista previa para copiarlo.");}
+ });
+ $("hubSendSummary").addEventListener("click",()=>{
+  if(summaryIsExample||!matchHasData())return;
+  summary.close();
   if(typeof originalSummary==="function")originalSummary.call(originalButton);
-  else alert("No se pudo recuperar el resumen original.");
+  else if(typeof currentSummary==="function")window.open("https://wa.me/?text="+encodeURIComponent(currentSummary()),"_blank","noopener");
  });
  $("hubPhoto").addEventListener("click",()=>{
   share.close();
@@ -80,6 +111,32 @@ try{
   if(window.FutbolitoQr?.mount)window.FutbolitoQr.mount();
   else $("hubQrStatus").textContent="La configuración de QR todavía está cargando. Intenta de nuevo.";
  });
+ // Escudo local predeterminado, guardado en el mismo dispositivo.
+ const defaultHomeLogoKey="futbolito-default-home-logo:"+slug;
+ function refreshDefaultLogo(){
+  $("hubDefaultLogoStatus").textContent=localStorage.getItem(defaultHomeLogoKey)?
+   "✓ Escudo local guardado en este dispositivo. Se utilizará automáticamente en nuevos QR.":
+   "No hay escudo local guardado. Sin imagen se mostrarán las iniciales.";
+ }
+ const defaultLogoField=$("hubDefaultLogo");
+ defaultLogoField.addEventListener("change",async()=>{
+  const file=defaultLogoField.files?.[0];if(!file)return;
+  if(!["image/png","image/jpeg","image/webp"].includes(file.type)||file.size>1048576){
+   alert("Selecciona PNG, JPG o WebP de 1 MB o menos.");defaultLogoField.value="";return;
+  }
+  try{
+   const data=await new Promise((resolve,reject)=>{
+    const reader=new FileReader();reader.onload=()=>resolve(reader.result);
+    reader.onerror=()=>reject(Error("No se pudo leer la imagen."));reader.readAsDataURL(file);
+   });
+   localStorage.setItem(defaultHomeLogoKey,String(data));refreshDefaultLogo();
+  }catch(e){alert("No se pudo guardar el escudo en este dispositivo.");}
+  defaultLogoField.value="";
+ });
+ $("hubRemoveDefaultLogo").addEventListener("click",()=>{
+  localStorage.removeItem(defaultHomeLogoKey);defaultLogoField.value="";refreshDefaultLogo();
+ });
+ refreshDefaultLogo();
  function reflect(){
   $("hubYellowPopup").checked=prefs.showYellowPopup!==false;
   $("hubResetFouls").checked=prefs.resetFouls!==false;
