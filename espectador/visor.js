@@ -140,7 +140,60 @@ async function fetchCurrent(){
  }finally{fetchInProgress=false;}
 }
 setInterval(renderClock,450);
-setInterval(()=>{if(!document.hidden)fetchCurrent()},4200);
-setInterval(()=>{if(document.hidden)fetchCurrent()},17000);
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)fetchCurrent()});
-fetchCurrent();
+if(new URLSearchParams(location.search).get("demo")==="1"){
+ const fake={
+   title:"Amistoso de Futbolito · DEMOSTRACIÓN",status:"live",
+   home_logo_url:null,away_logo_url:null,event_seq:3,
+   snapshot:{home_name:"Mala Clase",away_name:"Larraguibel",scores:[3,2],
+    period_fouls:[2,1],yellow_cards:[2,1],red_cards:[0,1],
+    period:2,elapsed:1122,half_minutes:25,running:false,
+    synced_at:new Date().toISOString()},
+   event_history:[
+    {type:"goal",team:"home",player:"Paine",period:1,minute:11},
+    {type:"yellow",team:"away",player:"#7",period:2,minute:15},
+    {type:"goal",team:"home",player:"Paine",period:2,minute:17}
+   ]
+ };
+ function paintDemo(){
+  apply(fake);
+  $("availability").textContent="◉ DEMOSTRACIÓN · Datos ficticios";
+  $("clockState").textContent=fake.status==="finished"?"Resultado final":"Marcador de ejemplo";
+  document.title="Futbolito · Demostración del espectador";
+ }
+ paintDemo();
+ const controls=document.createElement("div");
+ controls.style.cssText="position:relative;z-index:2;max-width:850px;margin:0 auto 35px;padding:15px;border:1px solid #7355a6;border-radius:13px;background:#1b1733;text-align:center;font:14px system-ui";
+ const cap=document.createElement("strong");
+ cap.textContent="🎮 Modo demostración · Estos botones NO modifican un partido real.";
+ controls.append(cap);
+ const opts=[
+  ["⚽ Probar gol","goal","Paine"],
+  ["🟨 Probar amarilla","yellow","#7"],
+  ["🟥 Probar roja","red","#4"]
+ ];
+ for(const [label,kind,player] of opts){
+  const b=document.createElement("button");b.type="button";b.textContent=label;
+  b.style.cssText="border:1px solid #a38bc4;color:white;background:#403052;border-radius:8px;padding:9px;margin:8px 4px;cursor:pointer";
+  b.addEventListener("click",()=>showAnnouncement({
+   type:kind,player,team:kind==="yellow"?"away":"home",minute:19
+  },fake.snapshot));
+  controls.append(b);
+ }
+ const finish=document.createElement("button");
+ finish.type="button";finish.textContent="🏁 Ver partido finalizado";
+ finish.style.cssText="border:1px solid #e4c979;color:white;background:#61502b;border-radius:8px;padding:9px;margin:8px 4px;cursor:pointer";
+ finish.addEventListener("click",()=>{
+  const ended=fake.status==="finished";
+  fake.status=ended?"live":"finished";fake.snapshot.period=ended?2:3;
+  if(!ended)fake.snapshot.scores=[4,2];else fake.snapshot.scores=[3,2];
+  finish.textContent=ended?"🏁 Ver partido finalizado":"▶ Volver al partido en vivo";
+  paintDemo();
+ });
+ controls.append(finish);
+ document.body.append(controls);
+}else{
+ setInterval(()=>{if(!document.hidden)fetchCurrent()},4200);
+ setInterval(()=>{if(document.hidden)fetchCurrent()},17000);
+ document.addEventListener("visibilitychange",()=>{if(!document.hidden)fetchCurrent()});
+ fetchCurrent();
+}
