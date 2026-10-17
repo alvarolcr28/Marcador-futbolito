@@ -134,7 +134,7 @@
    :"No hay estadísticas individuales registradas para este jugador; no se muestran ceros ni valores inventados.";
  }
  function open(){
-  share.close();roster=players();
+  share.close();image=null;$("mvpPhoto").value="";roster=players();
   $("mvpPlayer").replaceChildren();
   if(roster.length)roster.forEach((p,i)=>$("mvpPlayer").add(new Option(p.label,String(i))));
   else $("mvpPlayer").add(new Option("Sin jugadores registrados",""));
