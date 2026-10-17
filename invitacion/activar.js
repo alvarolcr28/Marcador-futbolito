@@ -31,7 +31,7 @@ async function doAccount(kind){
   if(kind==="signup"){
    const out=await db.auth.signUp({
     email,password,
-    options:{emailRedirectTo:location.origin+"/Marcador-futbolito/invitacion/"}
+    options:{emailRedirectTo:location.origin+"/Marcador-futbolito/acceso/"}
    });
    error=out.error;
    if(error)throw error;
