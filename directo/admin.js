@@ -65,7 +65,7 @@ async function refreshHistory(){
    const tag=document.createElement("small");tag.textContent="Seleccionado";buttons.append(tag);
   }else if(m.status!=="revoked"&&(!m.expires_at||new Date(m.expires_at)>new Date())){
    const pick=document.createElement("button");pick.textContent="Gestionar";
-   pick.addEventListener("click",()=>{record=Object.assign({},m);logoHome=null;logoAway=null;saveLocal();controls();message("Enlace seleccionado. Si no conservas el QR, utiliza «Crear otro enlace» para recuperarlo.")});
+   pick.addEventListener("click",()=>{record=Object.assign({},m);logoHome=m.home_logo_url||null;logoAway=m.away_logo_url||null;saveLocal();controls();message("Enlace seleccionado. Si no conservas el QR, utiliza «Crear otro enlace» para recuperarlo.")});
    buttons.append(pick);
   }
   if(m.status!=="revoked"&&(!m.expires_at||new Date(m.expires_at)>new Date())){
@@ -94,7 +94,7 @@ async function changeClub(){
  history=Array.isArray(r.data)?r.data:[];
  const match=history.find(m=>m.id===saved);
  if(!match){record=null;localStorage.removeItem(storageKey())}
- else{record={...match,token:record?.token};saveLocal()}
+ else{record={...match,token:record?.token};logoHome=match.home_logo_url||null;logoAway=match.away_logo_url||null;saveLocal()}
  $("matchTitle").value=record?.title||defaultTitle;$("hours").value=record?.access_hours||6;
  controls();await refreshHistory();
  message(record?"Enlace de "+selected.name+" cargado.":"Prepara un nuevo enlace para "+selected.name+".");
@@ -173,7 +173,7 @@ async function saveAppearance(){
   p_home_logo_url:logoHome,p_away_logo_url:logoAway
  });
  if(error)throw error;
- record.title=title;saveLocal();
+ record.title=title;record.home_logo_url=logoHome;record.away_logo_url=logoAway;saveLocal();
  $("homeImage").value="";$("awayImage").value="";
 }
 $("saveAppearance").addEventListener("click",async()=>{
