@@ -4,6 +4,8 @@
 #privateExit{order:999!important;margin-left:auto}
 #publishMatchQr,.top-actions .instagram-post{display:none!important}
 #fHubShareButton,#fHubSettingsButton{font-size:19px!important;flex-shrink:0}
+#summaryFold{display:none!important}
+.fhub-preview{white-space:pre-wrap;overflow-wrap:anywhere;max-height:48dvh;overflow-y:auto;background:#0e1826;border:1px solid #3c576f;border-radius:11px;padding:13px;font:13px/1.6 system-ui,-apple-system,sans-serif;color:#eef7ff}
 #fHubShareButton{background:#27bf72;color:#081c12}
 #fHubSettingsButton{background:#24354e}
 .fhub-dialog{max-width:min(600px,calc(100vw - 16px));width:100%;padding:15px;max-height:93dvh;overflow-y:auto;border:1px solid #9373b4}
@@ -39,6 +41,13 @@
 <button class="fhub-opt" id="hubQr">▦ Compartir marcador en vivo (QR)<small>Preparar el enlace, elegir de 3 a 24 horas y publicarlo sin salir.</small></button>
 <button class="fhub-opt" id="hubPhoto">📸 Compartir foto para redes<small>Abrir el diseñador de Instagram y guardar o compartir la imagen.</small></button>
 </dialog>
+<dialog id="fHubSummaryPreview" class="fhub-dialog">
+ <div class="fhub-head"><h2>📲 Vista previa de WhatsApp</h2><button class="close" id="hubSummaryClose">✕</button></div>
+ <p class="fhub-small" id="hubSummaryLabel">Comprueba los datos antes de compartir.</p>
+ <div class="fhub-actions"><button class="btn" id="hubViewActual">Mi partido</button><button class="btn" id="hubViewExample">Ver ejemplo ficticio</button></div>
+ <pre class="fhub-preview" id="hubSummaryText"></pre>
+ <div class="fhub-actions"><button class="btn" id="hubCopySummary">Copiar texto</button><button class="btn primary" id="hubSendSummary">↗ Enviar por WhatsApp</button></div>
+</dialog>
 <dialog id="fHubSettings" class="fhub-dialog">
 <div class="fhub-head"><h2>⚙ Ajustes de Futbolito</h2><button class="close" id="hubSettingsClose">✕</button></div>
 <div class="fhub-tabs" role="tablist">
@@ -57,7 +66,14 @@
  <div class="fhub-actions"><button class="btn primary" id="hubSaveGame">Guardar ajustes</button></div>
 </div>
 <div id="hubLook" class="fhub-tab-panel fhub-layout" hidden>
- <div id="hubTeams"></div><div id="hubTheme"></div>
+ <div id="hubTeams"></div>
+  <div class="fhub-line"><strong>Escudo local predeterminado para QR</strong>
+    <p class="fhub-small">Cárgalo una sola vez en este dispositivo; se reutiliza al preparar nuevos enlaces del club.</p>
+    <label class="fhub-field">Seleccionar escudo (PNG, JPG o WebP; máximo 1 MB)<input type="file" accept="image/png,image/jpeg,image/webp" id="hubDefaultLogo"></label>
+    <div class="fhub-actions"><button type="button" id="hubRemoveDefaultLogo" class="btn">Quitar escudo guardado</button></div>
+    <p class="fhub-small" id="hubDefaultLogoStatus"></p>
+  </div>
+  <div id="hubTheme"></div>
  <p class="fhub-small">Los colores personales se guardan en este dispositivo. Los cambios en las plantillas oficiales se gestionan en Supabase.</p>
 </div>
 <div id="hubCompetition" class="fhub-tab-panel fhub-layout" hidden>
@@ -69,9 +85,13 @@
 <p class="fhub-small">El tiempo de acceso comienza al pulsar «Publicar». Solo el administrador general o el encargado puede crear y compartir este QR.</p>
 <div class="fhub-layout">
  <label class="fhub-field">Título del partido o torneo<input id="hubQrTitle" maxlength="100" value="Partido de Futbolito"></label>
- <label class="fhub-field">Duración de acceso (3–24 horas)<input id="hubQrHours" type="number" min="3" max="24" step="1" value="6"></label>
+ <label class="fhub-field">Duración de acceso<select id="hubQrHours">
+   <option value="3">3 horas</option><option value="6" selected>6 horas (predeterminado)</option>
+   <option value="9">9 horas</option><option value="12">12 horas</option>
+   <option value="18">18 horas</option><option value="24">24 horas</option>
+  </select></label>
  <div class="fhub-grid">
-  <label class="fhub-field">Escudo local (opcional)<input id="hubLogoHome" type="file" accept="image/png,image/jpeg,image/webp"></label>
+  <label class="fhub-field">Cambiar escudo local solo para este QR (opcional)<input id="hubLogoHome" type="file" accept="image/png,image/jpeg,image/webp"></label>
   <label class="fhub-field">Escudo visitante (opcional)<input id="hubLogoAway" type="file" accept="image/png,image/jpeg,image/webp"></label>
  </div>
  <p class="fhub-small">PNG, JPG o WebP, máximo 1 MB por imagen. Sin escudos se muestran las iniciales.</p>
