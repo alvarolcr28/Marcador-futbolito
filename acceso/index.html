@@ -35,7 +35,7 @@
    <section class="card">
      <h2 id="clubTitle">Selecciona un club</h2>
      <div id="rosterSection" hidden>
-      <div class="admin-note">Editor de plantillas oficiales. Los cambios se guardan en Supabase y se reflejan en los marcadores al iniciar sesión o volver a cargar.</div>
+      <div class="admin-note">Editor de plantillas oficiales. Los cambios se guardan en Supabase y se reflejan en los marcadores al iniciar sesión o volver a cargar. Cada dorsal es único dentro de su plantilla, pero puede repetirse en otras.</div>
       <label class="field">Plantilla<select id="squadSelect"></select></label>
       <div id="players"></div>
       <div class="mini-section"><div class="smallcap">Añadir jugador</div>
@@ -56,6 +56,17 @@ const db=createClient(PROJECT_URL,PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,p
 const $=id=>document.getElementById(id);
 const linkBack=location.origin+location.pathname;
 let clubs=[], selectedClub=null, squads=[], activeSquad=null, busy=false, isPlatformAdmin=false, managedClubIds=[];
+let playersInSquad=[];
+function normalizeDorsal(value){
+ const v=String(value??'').trim();
+ return /^\d{1,6}$/.test(v)?String(Number(v)):null;
+}
+function occupiedDorsal(number,excludeId=''){
+ return playersInSquad.find(p=>p.id!==excludeId&&normalizeDorsal(p.shirt_number)===number);
+}
+function duplicateText(player,number){
+ return 'La camiseta '+number+' ya está ocupada por '+player.display_name+' en la plantilla '+(activeSquad?.name||'seleccionada')+'. Elige otro número.';
+}
 function status(message,error=false,target='authStatus'){const el=$(target);el.textContent=message;el.classList.toggle('error',error);}
 function disableForm(disabled){$('signInForm').querySelectorAll('button,input').forEach(x=>x.disabled=disabled);}
 function showGuest(){ $('authBox').hidden=false; $('adminBox').hidden=true; $('logout').hidden=true;}
@@ -81,18 +92,26 @@ async function selectClub(id){
 }
 async function showPlayers(){
  activeSquad=squads.find(s=>s.id===$('squadSelect').value)||null;
- const root=$('players');root.replaceChildren();if(!activeSquad)return;
+ const root=$('players');root.replaceChildren();playersInSquad=[];if(!activeSquad)return;
  const {data,error}=await db.from('players').select('id,shirt_number,display_name,sort_order').eq('squad_id',activeSquad.id).order('sort_order');
  if(error){status(error.message,true,'adminStatus');return;}
- for(const player of data||[]){
+ playersInSquad=data||[];
+ for(const player of playersInSquad){
   const row=document.createElement('div');row.className='player';
   const num=document.createElement('input');num.value=player.shirt_number;num.maxLength=6;num.setAttribute('aria-label','Número');
   const name=document.createElement('input');name.value=player.display_name;name.maxLength=80;name.setAttribute('aria-label','Nombre');
   const save=document.createElement('button');save.className='btn small primary';save.textContent='Guardar';
   const del=document.createElement('button');del.className='btn small warn';del.textContent='Quitar';
-  save.onclick=async()=>{if(!name.value.trim()||!num.value.trim())return status('Ingresa nombre y número.',true,'adminStatus');save.disabled=true;
-   const {error}=await db.from('players').update({shirt_number:num.value.trim(),display_name:name.value.trim()}).eq('id',player.id);
-   status(error?error.message:'Jugador actualizado para todos los usuarios autorizados.',!!error,'adminStatus');save.disabled=false;if(!error)await showPlayers();};
+  save.onclick=async()=>{
+   const dorsal=normalizeDorsal(num.value);
+   if(!name.value.trim()||dorsal===null)return status('Ingresa el nombre y un número de camiseta de hasta 6 dígitos.',true,'adminStatus');
+   const duplicate=occupiedDorsal(dorsal,player.id);
+   if(duplicate)return status(duplicateText(duplicate,dorsal),true,'adminStatus');
+   save.disabled=true;
+   const {error}=await db.from('players').update({shirt_number:dorsal,display_name:name.value.trim()}).eq('id',player.id);
+   status(error?(error.code==='23505'?'Ese número ya está ocupado en esta plantilla.':error.message):'Jugador actualizado para todos los usuarios autorizados.',!!error,'adminStatus');
+   save.disabled=false;if(!error)await showPlayers();
+  };
   del.onclick=async()=>{if(!confirm(`¿Eliminar a ${player.display_name} de la plantilla oficial?`))return;
    const {error}=await db.from('players').delete().eq('id',player.id);
    status(error?error.message:'Jugador eliminado.',!!error,'adminStatus');if(!error)await showPlayers();};
@@ -102,10 +121,12 @@ async function showPlayers(){
 $('squadSelect').addEventListener('change',showPlayers);
 $('addPlayer').onclick=async()=>{
  if(!activeSquad)return status('Selecciona una plantilla.',true,'adminStatus');
- const shirt_number=$('newNumber').value.trim(),display_name=$('newName').value.trim();
- if(!shirt_number||!display_name)return status('Completa número y nombre.',true,'adminStatus');
+ const shirt_number=normalizeDorsal($('newNumber').value),display_name=$('newName').value.trim();
+ if(shirt_number===null||!display_name)return status('Completa el nombre y un dorsal numérico (máximo 6 dígitos).',true,'adminStatus');
+ const duplicate=occupiedDorsal(shirt_number);
+ if(duplicate)return status(duplicateText(duplicate,shirt_number),true,'adminStatus');
  const {error}=await db.from('players').insert({squad_id:activeSquad.id,shirt_number,display_name,sort_order:1000});
- status(error?error.message:'Jugador agregado a la plantilla oficial.',!!error,'adminStatus');
+ status(error?(error.code==='23505'?'Ese número ya está ocupado en esta plantilla.':error.message):'Jugador agregado a la plantilla oficial.',!!error,'adminStatus');
  if(!error){$('newNumber').value='';$('newName').value='';await showPlayers();}
 };
 $('addClub').onclick=async()=>{
