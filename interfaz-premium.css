@@ -1,0 +1,241 @@
+/* Futbolito · Interfaz de cabina 2026
+ * Jerarquía visual para móvil: reloj > marcador > acciones > historial.
+ * Complementa estilos existentes sin modificar datos ni controles de partidos. */
+:root{
+ --ui-surface:#101c29;
+ --ui-surface-soft:#162536;
+ --ui-border:#516675;
+ --ui-focus:#f6d887;
+}
+.top{
+ padding:11px 12px;
+ border:1px solid #ffffff23;
+ background:linear-gradient(120deg,rgba(20,31,45,.96),rgba(12,24,32,.90));
+ border-radius:17px;
+ box-shadow:0 5px 22px #00000028;
+}
+.top .brand{letter-spacing:-.045em;font-weight:950;line-height:1.08}
+.top .tag{color:#bed0d7;line-height:1.3;margin-top:3px}
+.top-actions{gap:7px;flex-shrink:0}
+.top-actions .iconbtn{transition:transform .15s ease,box-shadow .15s ease;box-shadow:0 2px 8px #0004}
+.top-actions .iconbtn:active{transform:scale(.95)}
+.view-switch{
+ border:1px solid #5c718168;
+ background:linear-gradient(180deg,#192936,#0b141f);
+ border-radius:15px;
+ padding:5px;gap:6px;
+ box-shadow:0 4px 12px #00000020;
+}
+.view-tab{
+ border-radius:10px;
+ font-size:13px;
+ line-height:1.2;
+ letter-spacing:.01em;
+ color:#d7e1ec;
+}
+.view-tab.active{box-shadow:0 3px 10px #0006;filter:saturate(1.13)}
+.quick-board{gap:12px}
+.quick-head{
+ position:sticky;
+ top:calc(env(safe-area-inset-top,0px) + 6px);
+ z-index:35;
+ padding:13px 14px 13px;
+ border:1px solid #697987;
+ border-top:3px solid var(--green);
+ border-left:1px solid #697987;
+ background:linear-gradient(135deg,#20313ce8,#101b28fb 66%);
+ border-radius:17px;
+ box-shadow:0 11px 28px #00000084;
+ backdrop-filter:blur(15px);
+ -webkit-backdrop-filter:blur(15px);
+ grid-template-columns:minmax(52px,74px) minmax(0,1fr) minmax(88px,138px);
+ gap:8px;
+}
+.quick-pause{
+ min-height:68px;
+ border:1px solid #ffffff65;
+ border-radius:13px;
+ box-shadow:inset 0 1px 0 #ffffff45,0 4px 16px #0004;
+ font-size:32px;
+}
+.quick-pause:active{transform:scale(.96)}
+.quick-time-wrap{display:grid;justify-items:center;gap:3px}
+.quick-period{
+ font-size:11px;
+ letter-spacing:.1em;
+ color:#ffe38b;
+ line-height:1.2;
+}
+.quick-time{
+ font:950 clamp(38px,7.5vw,76px)/1 ui-monospace,SFMono-Regular,Consolas,monospace;
+ letter-spacing:-2.3px;
+ font-variant-numeric:tabular-nums;
+ color:#fff;
+ text-shadow:0 2px 6px #0008;
+}
+.quick-time.is-running{color:var(--green)}
+.quick-match-status{
+ color:#d1e7ed;
+ background:#344c5b;
+ border:1px solid #75909f;
+ border-radius:40px;
+ font-size:10px;
+ font-weight:900;
+ letter-spacing:.075em;
+ padding:2px 9px;
+ min-height:19px;
+ line-height:1.2;
+}
+.quick-head[data-playing=true] .quick-match-status{
+ background:#103e2b;color:#b0ffda;border-color:#35ac79;
+}
+.quick-head[data-finished=true] .quick-match-status{
+ background:#2e3346;color:#ffdb92;border-color:#bc9658;
+}
+.quick-time-progress{
+ width:min(90%,310px);
+ height:4px;
+ border-radius:50px;
+ background:#516579;
+ overflow:hidden;
+ margin-top:4px;
+}
+.quick-time-progress>span{display:block;height:100%;width:0;background:var(--green);border-radius:50px;transition:width .2s linear}
+.quick-score{
+ border:1px solid #a4b3ca60;
+ border-radius:13px;
+ background:#0c1826;
+ padding:12px 6px;
+ min-height:74px;
+ font-size:clamp(29px,5vw,46px);
+ box-shadow:inset 0 1px 0 #ffffff15;
+}
+.quick-score b{letter-spacing:-.07em}
+.quick-teamnames{
+ margin:0 2px;
+ padding:0 1px;
+ gap:5px;
+ grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+ font-size:clamp(12px,3vw,15px);
+}
+.quick-teamnames span:first-child,.quick-teamnames span:last-child{
+ display:flex;align-items:center;justify-content:center;
+ min-height:44px;
+ padding:7px 8px;
+ background:#1b2936;
+ border:1px solid #506478;
+ border-radius:10px;
+ overflow-wrap:anywhere;
+}
+.quick-teamnames span:first-child{border-top:2px solid var(--green)}
+.quick-teamnames span:last-child{border-top:2px solid var(--blue)}
+.quick-vs{font-size:11px;font-weight:900;letter-spacing:.04em;color:#d0d8e3}
+.quick-section{
+ border-radius:16px;
+ border:1px solid #4a5c66;
+ background:linear-gradient(145deg,#17242d,#0e1820);
+ padding:14px;
+ box-shadow:0 5px 15px #0000001e;
+}
+.quick-section h2{
+ font-size:16px;letter-spacing:-.012em;
+ margin-bottom:12px;
+}
+.quick-section h2 small{font-size:11px;color:#b9c8d3}
+.quick-goal{
+ border-radius:13px;min-height:88px;
+ box-shadow:inset 0 1px 0 #ffffff55,0 3px 8px #0005;
+ gap:6px;
+}
+.quick-goal strong{font-size:clamp(13px,3.3vw,18px)}
+.quick-goal span{font-size:12px}
+.quick-goal:active{transform:scale(.97)}
+.quick-foul-box{
+ padding:11px;border-radius:12px;
+ background:#131f2a;
+ border-color:#4c6476;
+}
+.quick-foul-head strong{font-size:34px;color:#ffe18e}
+.quick-foul-buttons button{height:54px;border-radius:10px}
+.quick-foul-buttons button:last-child{font-size:14px}
+.quick-card-col{padding:11px;border-radius:12px;background:#131f2a}
+.quick-card-col button{min-height:52px;border-radius:10px}
+.quick-actions{gap:10px;margin-top:0}
+.quick-actions .btn{min-height:51px;font-weight:900}
+.quick-message{font-size:11px;color:#9cabb6;padding:0 10px 6px}
+#mainMatchArea .timer{
+ background:linear-gradient(120deg,#102626,#111a26);
+ border:1px solid #657c7a;
+ border-top:3px solid var(--green);
+ border-left:1px solid #657c7a;
+ border-radius:17px;
+ box-shadow:0 10px 30px #00000047;
+}
+#mainMatchArea .timer .clock{
+ text-shadow:0 3px 15px #0000004d;
+ font-variant-numeric:tabular-nums;
+}
+#mainMatchArea .timer .period{letter-spacing:.15em;font-weight:900}
+#mainMatchArea .scoreboard{gap:12px}
+#mainMatchArea .team{
+ border-radius:16px;
+ box-shadow:0 8px 22px #0000002b;
+}
+#mainMatchArea .teamname{letter-spacing:-.025em}
+#mainMatchArea .score{font-variant-numeric:tabular-nums;font-weight:950;letter-spacing:-.04em}
+#mainMatchArea .scorebtn{border-radius:12px;min-height:53px}
+#mainMatchArea .scorebtn.plus{font-weight:950}
+#mainMatchArea .stats{margin:8px 0}
+#mainMatchArea .statbox{border-radius:12px;background:#17232c}
+#mainMatchArea .history-fold{background:#14232c;border-color:#4c6069}
+#mainMatchArea .history-fold>summary{
+ color:#e2ebf3;
+ border-radius:12px;
+ min-height:53px;
+ font-weight:850;
+}
+#mainMatchArea .history-fold>summary:after{color:var(--green)}
+#mainMatchArea .history-fold[open]{box-shadow:0 4px 13px #00000026}
+.fhub-opt:focus-visible,.view-tab:focus-visible,.quick-head button:focus-visible{
+ outline:3px solid var(--ui-focus);outline-offset:2px;
+}
+@media(max-width:600px){
+ .top{padding:9px 10px;border-radius:13px;margin-bottom:9px}
+ .top .brand{font-size:clamp(17px,4.3vw,23px)}
+ .top .tag{font-size:10px}
+ .top-actions{gap:5px}
+ .view-switch{margin-bottom:10px}
+ .quick-board{gap:9px}
+ .quick-head{
+  grid-template-columns:53px minmax(0,1fr) minmax(80px,101px);
+  padding:10px 7px;
+  gap:6px;
+  border-radius:13px;
+ }
+ .quick-pause{min-height:56px;font-size:26px;border-radius:10px}
+ .quick-period{font-size:9px;letter-spacing:.07em}
+ .quick-time{font-size:clamp(33px,8.4vw,50px);letter-spacing:-2.1px}
+ .quick-score{min-height:58px;font-size:clamp(26px,7.2vw,37px);padding:8px 3px;border-radius:10px}
+ .quick-match-status{font-size:9px;padding:2px 6px}
+ .quick-time-progress{height:3px}
+ .quick-section{padding:11px;border-radius:13px}
+ .quick-goal{min-height:83px}
+ .quick-foul-buttons{grid-template-columns:43px minmax(0,1fr)}
+ .quick-foul-buttons button{height:50px}
+ .quick-card-col{padding:9px 6px}
+ .quick-card-col>div{gap:5px}
+ .quick-card-col button{font-size:clamp(10px,2.6vw,12px);padding:7px 2px}
+ #mainMatchArea .timer{padding:12px 10px}
+ #mainMatchArea .scoreboard{gap:8px}
+ #mainMatchArea .team{padding:12px 5px}
+ #mainMatchArea .scorebtn{min-height:45px}
+}
+@media(max-width:356px){
+ .quick-head{grid-template-columns:48px minmax(0,1fr) 76px;gap:5px}
+ .quick-time{font-size:30px;letter-spacing:-1.6px}
+ .quick-score{font-size:26px}
+ .quick-section h2 small{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+ .quick-time-progress>span,.view-tab,.quick-head button,.quick-goal{animation:none!important;transition:none!important}
+}
