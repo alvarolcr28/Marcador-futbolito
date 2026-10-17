@@ -1,0 +1,23 @@
+{
+  "id": "/Marcador-futbolito/inicio/",
+  "name": "Futbolito · Administrador",
+  "short_name": "Futbolito",
+  "description": "Control de equipos y avisos de accesos pendientes.",
+  "start_url": "/Marcador-futbolito/inicio/",
+  "scope": "/Marcador-futbolito/inicio/",
+  "display": "standalone",
+  "background_color": "#0c1421",
+  "theme_color": "#101726",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "sports",
+    "productivity"
+  ]
+}
