@@ -34,7 +34,7 @@ try{
  async function loadExtension(path){
   await new Promise((resolve,reject)=>{
    const script=document.createElement("script");
-   script.src="/Marcador-futbolito/"+path+"?v=20261017-3";
+   script.src="/Marcador-futbolito/"+path+"?v=20261017-4";
    script.onload=resolve;
    script.onerror=()=>reject(Error("No se pudo cargar "+path));
    document.body.appendChild(script);
