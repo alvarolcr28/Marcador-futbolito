@@ -6,7 +6,7 @@
  const trigger=document.createElement("button");
  trigger.type="button";trigger.className="fhub-opt";
  trigger.innerHTML="⭐ Publicación MVP<small>Foto del jugador y estadísticas reales, separadas de las del partido.</small>";
- ($("hubPhoto")||share.lastElementChild).insertAdjacentElement("afterend",trigger);
+ ($("hubSocialChoices")||share).appendChild(trigger);
  const dialog=document.createElement("dialog");
  dialog.id="mvpPublicationDialog";dialog.className="fhub-dialog mvp-editor";
  dialog.innerHTML=`
@@ -134,7 +134,7 @@
    :"No hay estadísticas individuales registradas para este jugador; no se muestran ceros ni valores inventados.";
  }
  function open(){
-  share.close();image=null;$("mvpPhoto").value="";roster=players();
+  if($("fHubSocial")?.open)$("fHubSocial").close();else if(share.open)share.close();image=null;$("mvpPhoto").value="";roster=players();
   $("mvpPlayer").replaceChildren();
   if(roster.length)roster.forEach((p,i)=>$("mvpPlayer").add(new Option(p.label,String(i))));
   else $("mvpPlayer").add(new Option("Sin jugadores registrados",""));
