@@ -45,6 +45,7 @@ try{
  await loadExtension("menu-qr.js");
  await loadExtension("menu-torneos.js");
   await loadExtension("registro-jugadores.js");
+ await loadExtension("publicacion-mvp.js");
  function closeOn(dialog,button){
   $(button).addEventListener("click",()=>dialog.close());
   dialog.addEventListener("click",e=>{if(e.target===dialog)dialog.close()});
