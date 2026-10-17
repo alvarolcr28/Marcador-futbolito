@@ -13,6 +13,12 @@
 .fhub-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
 .fhub-opt{display:flex;flex-direction:column;text-align:left;width:100%;gap:3px;padding:14px 15px;background:#1c293e;color:white;border:1px solid #465875;border-radius:12px;margin:7px 0;font-size:15px;font-weight:850;cursor:pointer}
 .fhub-opt small{font-weight:400;font-size:12px;color:#bfc9d9}
+#hubPhoto{position:relative;padding-right:38px}#hubPhoto span{position:absolute;right:17px;top:calc(50% - 14px);font-size:25px;color:#c7e1ec}
+#hubSocialChoices{gap:3px}
+#hubSocialChoices .fhub-opt{border-left:3px solid #7faeff;transition:background .15s ease,transform .15s ease}
+#hubSocialChoices .fhub-opt:active{transform:scale(.988)}
+#hubSocialChoices .fhub-opt:last-child{border-left-color:#ffd579}
+
 .fhub-layout{display:grid;gap:11px}.fhub-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .fhub-field{display:grid;gap:5px;font-size:12px;font-weight:800;color:#d3d6e2}
 .fhub-field input,.fhub-field select{width:100%;min-height:43px;border:1px solid #62718a;background:#091525;color:white;border-radius:9px;padding:8px;font:inherit}
@@ -39,7 +45,17 @@
 <div class="fhub-head"><h2>↗ Compartir partido</h2><button class="close" id="hubShareClose">✕</button></div>
 <button class="fhub-opt" id="hubSummary">📲 Compartir resumen detallado<small>El mensaje habitual de WhatsApp, con goles, faltas y tarjetas.</small></button>
 <button class="fhub-opt" id="hubQr">▦ Compartir marcador en vivo (QR)<small>Preparar el enlace, elegir de 3 a 24 horas y publicarlo sin salir.</small></button>
-<button class="fhub-opt" id="hubPhoto">📸 Compartir foto para redes<small>Abrir el diseñador de Instagram y guardar o compartir la imagen.</small></button>
+<button class="fhub-opt" id="hubPhoto">📸 Foto para redes <span aria-hidden="true">›</span><small>Elige entre resultado, portada, goleadores o MVP.</small></button>
+</dialog>
+<dialog id="fHubSocial" class="fhub-dialog">
+ <div class="fhub-head"><h2>📸 Foto para redes</h2><button class="close" id="hubSocialClose" type="button" aria-label="Cerrar">✕</button></div>
+ <p class="fhub-small">Elige una plantilla para publicar datos reales del partido.</p>
+ <div id="hubSocialChoices" class="fhub-layout">
+  <button class="fhub-opt" id="hubSocialResult" type="button">📋 Resumen del partido<small>Fotografía, marcador, goles y estadísticas opcionales.</small></button>
+  <button class="fhub-opt" id="hubSocialScore" type="button">🏆 Portada de resultado<small>Una gráfica limpia, con el marcador como protagonista.</small></button>
+  <button class="fhub-opt" id="hubSocialScorers" type="button">⚽ Goleadores del partido<small>Goles registrados y minuto, sin atribuir autores al rival.</small></button>
+ </div>
+ <p class="fhub-small">Publicaciones 4:5 e historias 9:16. Guarda la imagen o compártela directamente.</p>
 </dialog>
 <dialog id="fHubSummaryPreview" class="fhub-dialog">
  <div class="fhub-head"><h2>📲 Vista previa de WhatsApp</h2><button class="close" id="hubSummaryClose">✕</button></div>
