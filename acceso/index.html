@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0d1020">
+<title>Futbolito · Acceso de administración</title>
+<style>
+:root{color-scheme:dark;--bg:#0c1020;--panel:#1a2034;--line:#394258;--text:#f5f5fb;--muted:#bac3d4;--accent:#b995f4;--accent2:#ed495c}*{box-sizing:border-box}body{margin:0;min-height:100dvh;background:radial-gradient(circle at 80% -10%,#3b254b 0%,var(--bg) 50%);font:15px/1.5 system-ui,-apple-system,Segoe UI,Arial,sans-serif;color:var(--text)}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}.wrap{max-width:980px;margin:auto;padding:20px 14px 36px}.head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:26px}.logo{font-size:20px;font-weight:900}.sub{color:var(--muted);font-size:12px}.card{background:#171d2ce9;border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 14px 35px #0003}.login{max-width:480px;margin:8vh auto 0}.login h1{margin:0 0 6px;font-size:25px}.lead{color:var(--muted);margin:0 0 20px}.field{display:block;margin:11px 0;color:var(--muted);font-size:13px;font-weight:650}.field input,.field select,.field textarea,input,select{width:100%;min-height:45px;background:#0e1525;border:1px solid #4a5875;color:white;border-radius:10px;padding:10px 12px;margin-top:5px}.field input:focus,input:focus,select:focus{outline:2px solid #c5adf5}.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}.btn{min-height:44px;border:1px solid var(--line);border-radius:10px;padding:10px 15px;background:#333e58;color:#fff;font-weight:800}.btn.primary{background:var(--accent);border-color:var(--accent);color:#1c0a31}.btn.warn{background:#4f242c;border-color:#b55c69}.btn.small{padding:7px 10px;min-height:36px;font-size:13px}.notice{margin-top:18px;border-left:3px solid var(--accent);padding:11px 12px;background:#252235;color:#e7dcee;border-radius:8px}.notice.error{border-left-color:#fa6674;background:#38212b;color:#ffe4e6}.note{color:var(--muted);font-size:12px}.grid{display:grid;grid-template-columns:270px minmax(0,1fr);gap:14px}.side{display:grid;align-content:start;gap:8px}.club{width:100%;border:1px solid #44445a;border-radius:11px;padding:12px;background:#20253a;color:#eee;text-align:left;font-weight:850;min-height:51px}.club.active{border-color:var(--accent);background:#372747}.club small{display:block;color:#adb4c1;font-weight:550}.grid h2{margin:0 0 12px;font-size:20px}.row{display:flex;align-items:center;flex-wrap:wrap;gap:9px}.row>*{min-width:0}.grow{flex:1}.player{display:grid;grid-template-columns:72px minmax(100px,1fr) 84px 75px;gap:7px;align-items:center;border-top:1px solid #ffffff1c;padding:8px 0}.player input{margin:0}.player button{padding:7px 5px}.split{display:grid;grid-template-columns:1fr 1fr;gap:10px}.admin-note{margin-bottom:10px;border:1px dashed #6d547d;border-radius:10px;padding:10px;color:#d5c7df;font-size:12px}.toolbar{margin-bottom:14px}.admin-controls{display:grid;gap:10px;margin-top:14px}.smallcap{font-size:12px;letter-spacing:.9px;font-weight:850;text-transform:uppercase;color:#c9b1e9;margin-bottom:7px}.mini-section{border-top:1px solid #3a4056;margin-top:19px;padding-top:12px}@media(max-width:670px){.grid{grid-template-columns:1fr}.wrap{padding:12px 9px 28px}.card{padding:15px}.login{margin-top:4vh}.player{grid-template-columns:52px minmax(0,1fr) 62px 63px;gap:4px}.player input{padding:7px 5px;min-height:44px}.player .btn{font-size:12px;padding:5px 3px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <div class="head"><div><div class="logo">⚽ Futbolito · Administración</div><div class="sub">Acceso privado · Mala Clase / Larraguibel</div></div><button id="logout" class="btn small" hidden>Cerrar sesión</button></div>
+ <div id="authBox" class="card login">
+  <h1>Ingresar a Futbolito</h1><p class="lead">Solo las cuentas autorizadas pueden administrar equipos y jugadores.</p>
+  <form id="signInForm">
+    <label class="field">Correo administrador<input id="email" type="email" value="alvaro.lcr28@gmail.com" autocomplete="username" required></label>
+    <label class="field">Contraseña<input id="password" type="password" autocomplete="current-password" minlength="8" required placeholder="Tu contraseña privada"></label>
+    <div class="actions"><button class="btn primary" type="submit">Iniciar sesión</button><button class="btn" type="button" id="register">Crear mi acceso</button></div>
+  </form>
+  <p class="note">La primera vez, elige una contraseña y presiona «Crear mi acceso». Verifica el mensaje que recibas en tu correo. No compartas la contraseña con nadie, tampoco por ChatGPT.</p>
+  <button class="btn small" id="forgot" type="button">¿Olvidaste tu contraseña?</button>
+  <div class="notice" id="authStatus" role="status" aria-live="polite">La activación inicial está habilitada solo para el correo del administrador principal. La base de datos verifica esa autorización de forma independiente.</div>
+ </div>
+ <div id="adminBox" hidden>
+  <div class="notice" id="adminStatus" role="status" aria-live="polite" style="margin-bottom:12px">Comprobando acceso…</div>
+  <div class="grid">
+   <div class="card side">
+     <div class="smallcap">Clubes autorizados</div><div id="clubList"></div>
+     <div class="mini-section"><button id="addClub" class="btn small">+ Crear club</button></div>
+     <p class="note">Las modificaciones guardadas aquí son compartidas: se registran en Supabase y no solamente en este navegador.</p>
+    </div>
+   <section class="card">
+     <h2 id="clubTitle">Selecciona un club</h2>
+     <div id="rosterSection" hidden>
+      <div class="admin-note">Editor de plantillas oficial. Los cambios están protegidos por permisos del servidor. Los marcadores actuales todavía no utilizan esta base de datos; se conectarán después de verificar tu acceso.</div>
+      <label class="field">Plantilla<select id="squadSelect"></select></label>
+      <div id="players"></div>
+      <div class="mini-section"><div class="smallcap">Añadir jugador</div>
+       <div class="split"><label class="field">N.º camiseta<input id="newNumber" type="text" maxlength="6" placeholder="19"></label><label class="field">Nombre<input id="newName" type="text" maxlength="80" placeholder="Nombre"></label></div>
+       <div class="actions"><button id="addPlayer" class="btn primary">+ Guardar jugador</button><button id="addSquad" class="btn">+ Nueva plantilla</button></div>
+      </div>
+     </div>
+    </section>
+  </div>
+ </div>
+</div>
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/+esm';
+const PROJECT_URL='https://cpqvrmorbwrrorrsobgj.supabase.co';
+const PUBLISHABLE_KEY='sb_publishable_KDivcfl1sf6CumXuMhi77w_k-01gmD4';
+const BOOTSTRAP_EMAIL='alvaro.lcr28@gmail.com';
+const db=createClient(PROJECT_URL,PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
+const $=id=>document.getElementById(id);
+const linkBack=location.origin+location.pathname;
+let clubs=[], selectedClub=null, squads=[], activeSquad=null, busy=false;
+function status(message,error=false,target='authStatus'){const el=$(target);el.textContent=message;el.classList.toggle('error',error);}
+function disableForm(disabled){$('signInForm').querySelectorAll('button,input').forEach(x=>x.disabled=disabled);}
+function showGuest(){ $('authBox').hidden=false; $('adminBox').hidden=true; $('logout').hidden=true;}
+function showAdmin(){ $('authBox').hidden=true; $('adminBox').hidden=false; $('logout').hidden=false;}
+async function fetchClubs(){
+ const {data,error}=await db.from('clubs').select('id,slug,name').order('name');
+ if(error)throw error;clubs=data||[];const list=$('clubList');list.replaceChildren();
+ for(const club of clubs){const btn=document.createElement('button');btn.className='club'+(selectedClub?.id===club.id?' active':'');btn.textContent=club.name;
+  const small=document.createElement('small');small.textContent=club.slug;btn.appendChild(small);btn.onclick=()=>selectClub(club.id);list.append(btn);}
+ if(!clubs.length){const empty=document.createElement('p');empty.textContent='Aún no hay clubes disponibles.';list.append(empty);}
+ if(!clubs.some(c=>c.id===selectedClub?.id))selectedClub=clubs[0]||null;
+ if(selectedClub)await selectClub(selectedClub.id);
+}
+async function selectClub(id){
+ selectedClub=clubs.find(c=>c.id===id)||null;
+ $('clubTitle').textContent=selectedClub?.name||'Selecciona un club';$('rosterSection').hidden=!selectedClub;
+ [...$('clubList').querySelectorAll('button.club')].forEach((b,i)=>b.classList.toggle('active',clubs[i]?.id===id));
+ if(!selectedClub)return;
+ const {data,error}=await db.from('squads').select('id,name').eq('club_id',id).order('name');
+ if(error){status(error.message,true,'adminStatus');return;}
+ squads=data||[];const sel=$('squadSelect');sel.replaceChildren();for(const s of squads){const o=document.createElement('option');o.value=s.id;o.textContent=s.name;sel.append(o);}
+ activeSquad=squads[0]||null;if(activeSquad){sel.value=activeSquad.id;await showPlayers();}else $('players').textContent='Sin plantillas: crea una para agregar jugadores.';
+}
+async function showPlayers(){
+ activeSquad=squads.find(s=>s.id===$('squadSelect').value)||null;
+ const root=$('players');root.replaceChildren();if(!activeSquad)return;
+ const {data,error}=await db.from('players').select('id,shirt_number,display_name,sort_order').eq('squad_id',activeSquad.id).order('sort_order');
+ if(error){status(error.message,true,'adminStatus');return;}
+ for(const player of data||[]){
+  const row=document.createElement('div');row.className='player';
+  const num=document.createElement('input');num.value=player.shirt_number;num.maxLength=6;num.setAttribute('aria-label','Número');
+  const name=document.createElement('input');name.value=player.display_name;name.maxLength=80;name.setAttribute('aria-label','Nombre');
+  const save=document.createElement('button');save.className='btn small primary';save.textContent='Guardar';
+  const del=document.createElement('button');del.className='btn small warn';del.textContent='Quitar';
+  save.onclick=async()=>{if(!name.value.trim()||!num.value.trim())return status('Ingresa nombre y número.',true,'adminStatus');save.disabled=true;
+   const {error}=await db.from('players').update({shirt_number:num.value.trim(),display_name:name.value.trim()}).eq('id',player.id);
+   status(error?error.message:'Jugador actualizado para todos los usuarios autorizados.',!!error,'adminStatus');save.disabled=false;if(!error)await showPlayers();};
+  del.onclick=async()=>{if(!confirm(`¿Eliminar a ${player.display_name} de la plantilla oficial?`))return;
+   const {error}=await db.from('players').delete().eq('id',player.id);
+   status(error?error.message:'Jugador eliminado.',!!error,'adminStatus');if(!error)await showPlayers();};
+  row.append(num,name,save,del);root.append(row);
+ }
+}
+$('squadSelect').addEventListener('change',showPlayers);
+$('addPlayer').onclick=async()=>{
+ if(!activeSquad)return status('Selecciona una plantilla.',true,'adminStatus');
+ const shirt_number=$('newNumber').value.trim(),display_name=$('newName').value.trim();
+ if(!shirt_number||!display_name)return status('Completa número y nombre.',true,'adminStatus');
+ const {error}=await db.from('players').insert({squad_id:activeSquad.id,shirt_number,display_name,sort_order:1000});
+ status(error?error.message:'Jugador agregado a la plantilla oficial.',!!error,'adminStatus');
+ if(!error){$('newNumber').value='';$('newName').value='';await showPlayers();}
+};
+$('addClub').onclick=async()=>{
+ const name=prompt('Nombre del nuevo club (ejemplo: Deportivo Norte)');if(!name?.trim())return;
+ const slug=name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,48);
+ if(slug.length<2)return status('El nombre del club es demasiado corto.',true,'adminStatus');
+ const {error}=await db.from('clubs').insert({name:name.trim(),slug});
+ status(error?error.message:'Club creado. Puedes añadir plantillas.',!!error,'adminStatus');if(!error)await fetchClubs();
+};
+$('addSquad').onclick=async()=>{
+ if(!selectedClub)return;
+ const name=prompt('Nombre de la plantilla (ejemplo: Mala Clase +30)');if(!name?.trim())return;
+ const {error}=await db.from('squads').insert({club_id:selectedClub.id,name:name.trim()});
+ status(error?error.message:'Plantilla creada.',!!error,'adminStatus');if(!error)await selectClub(selectedClub.id);
+};
+async function checkAccess(){
+ if(busy)return;busy=true;
+ try{
+  const {data:ud,error:ue}=await db.auth.getUser();if(ue||!ud?.user){showGuest();return;}
+  if(!ud.user.email_confirmed_at){showGuest();status('Confirma primero tu correo. Revisa el email que te envió Supabase.');return;}
+  const {error:claimError}=await db.rpc('claim_admin_role');
+  if(claimError)throw claimError;
+  const {data:isAdmin,error:adminError}=await db.rpc('is_platform_admin');
+  if(adminError)throw adminError;
+  if(!isAdmin){await db.auth.signOut();showGuest();status('La cuenta está verificada, pero no tiene permiso de administrador.',true);return;}
+  showAdmin();status('Acceso verificado. Sesión iniciada como administrador general.',false,'adminStatus');
+  await fetchClubs();
+ }catch(err){showGuest();status(err?.message||'No se pudo validar el acceso.',true);}
+ finally{busy=false;}
+}
+$('signInForm').addEventListener('submit',async ev=>{
+ ev.preventDefault();disableForm(true);status('Validando credenciales…');
+ try{const {error}=await db.auth.signInWithPassword({email:$('email').value.trim().toLowerCase(),password:$('password').value});
+  if(error)throw error;await checkAccess();}
+ catch(err){status(err.message||'No se pudo iniciar sesión.',true);}finally{disableForm(false);}
+});
+$('register').onclick=async()=>{
+ if($('email').value.trim().toLowerCase()!==BOOTSTRAP_EMAIL){status('La activación inicial solo está disponible para el correo administrador aprobado.',true);return;}
+ const password=$('password').value;if(password.length<8){status('La contraseña debe tener al menos 8 caracteres.',true);return;}
+ disableForm(true);status('Enviando correo de confirmación…');
+ try{const {error}=await db.auth.signUp({email:BOOTSTRAP_EMAIL,password,options:{emailRedirectTo:linkBack}});
+  if(error)throw error;status('Revisa tu correo y confirma el enlace. Después vuelve aquí para iniciar sesión.');}
+ catch(err){status(err.message||'No se pudo iniciar el registro.',true);}finally{disableForm(false);}
+};
+$('forgot').onclick=async()=>{
+ const email=$('email').value.trim().toLowerCase();if(!email)return status('Escribe primero el correo.',true);
+ try{const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:linkBack});if(error)throw error;status('Si el correo existe, recibirás instrucciones para restablecer tu contraseña.');}
+ catch(err){status(err.message||'Error de recuperación.',true);}
+};
+$('logout').onclick=async()=>{await db.auth.signOut();showGuest();status('Sesión cerrada.');};
+// Auth puede indicar recuperación de contraseña al volver desde el enlace de email.
+db.auth.onAuthStateChange((event)=>{
+ if(event==='PASSWORD_RECOVERY'){
+  const pass=prompt('Ingresa una nueva contraseña (mínimo 8 caracteres):');
+  if(pass?.length>=8)db.auth.updateUser({password:pass}).then(({error})=>status(error?error.message:'Contraseña actualizada. Ya puedes iniciar sesión.',!!error));
+ }
+});
+checkAccess();
+</script>
+</body>
+</html>
