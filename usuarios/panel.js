@@ -186,6 +186,23 @@ function renderMembers(members){
   root.append(card);
  }
 }
+// Aviso Web Push: no reemplaza el registro de la solicitud, que ya se guardó.
+async function notifyGeneralOfPendingRequest(requestId){
+ if(!requestId)return {delivered:0};
+ const {data:{session}}=await db.auth.getSession();
+ if(!session?.access_token)return {delivered:0};
+ const response=await fetch("https://cpqvrmorbwrrorrsobgj.supabase.co/functions/v1/futbolito-web-push",{
+  method:"POST",
+  headers:{
+   "Content-Type":"application/json",
+   "Authorization":"Bearer "+session.access_token,
+   "apikey":"sb_publishable_KDivcfl1sf6CumXuMhi77w_k-01gmD4"
+  },
+  body:JSON.stringify({action:"dispatch",request_id:requestId})
+ });
+ if(!response.ok)throw Error("No se pudo enviar el aviso al administrador.");
+ return response.json();
+}
 $("inviteForm").addEventListener("submit",async event=>{
  event.preventDefault();if(inFlight||!activeClub)return;
  inFlight=true;$("inviteButton").disabled=true;
@@ -201,7 +218,14 @@ $("inviteForm").addEventListener("submit",async event=>{
   const {data,error}=await db.rpc(rpc,args);
   if(error)throw error;
   if(data?.status==="approved"&&data.token)showInvitation(data.token,managerRole?"manager":"operator");
-  else if(data?.status==="pending")showStatus("La solicitud de "+email+" está pendiente de aprobación del administrador general.");
+  else if(data?.status==="pending"){
+   showStatus("La solicitud de "+email+" quedó pendiente de aprobación del administrador general. Enviando aviso…");
+   let result=null;
+   try{result=await notifyGeneralOfPendingRequest(data.request_id)}
+   catch(err){console.warn("Aviso de solicitud pendiente:",err?.message||err)}
+   showStatus("La solicitud de "+email+" quedó pendiente de aprobación del administrador general."+
+     (result?.delivered>0?" Se envió el aviso al teléfono del administrador.":" Aparecerá en su panel de solicitudes."));
+  }
   $("inviteEmail").value="";
   await refreshData();
  }catch(error){showStatus(error.message||"No se pudo enviar la solicitud.",true);}
