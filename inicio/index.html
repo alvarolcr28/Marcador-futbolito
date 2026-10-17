@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#101726">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Futbolito">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
 <title>Futbolito · Ingresar a mi equipo</title>
 <style>
 :root{color-scheme:dark;--bg:#0c1421;--panel:#172335;--line:#385064;--text:#f6f9fc;--muted:#b4c8d3;--accent:#6ee5b4;--red:#ff9da9}
@@ -39,6 +44,12 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .club strong{display:block;font-size:17px}.club small{color:#b7d9d3;font-size:12px}
 .club:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #e9db89;outline-offset:3px}
 .role{display:inline-block;margin-bottom:12px;color:#bcf7de;font-size:12px;font-weight:900;letter-spacing:.4px}
+.push-panel{border:1px solid #618678;border-radius:14px;background:#122b30;padding:15px;margin:8px 0 18px}
+.push-panel h2{font-size:16px;margin:0 0 7px}
+.push-panel p{font-size:13px;color:#c4d9d2;line-height:1.55;margin:5px 0}
+.push-panel .push-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.push-panel button{flex:1 1 160px;min-height:48px;padding:10px 8px}
+.push-panel #pushStatus{min-height:21px;font-size:12px;margin-top:9px;white-space:pre-line}
 .note{font-size:12px;color:var(--muted);line-height:1.6;margin:18px 0 0}
 [hidden]{display:none!important}
 </style>
@@ -58,6 +69,16 @@ button:disabled{opacity:.5;cursor:not-allowed}
   </section>
   <section class="card" id="teamsBox" hidden>
     <div class="role" id="role"></div>
+    <section class="push-panel" id="pushPanel" hidden aria-labelledby="pushHeading">
+      <h2 id="pushHeading">🔔 Avisos de solicitudes de acceso</h2>
+      <p id="pushInstallText">Para recibir avisos aunque Futbolito esté cerrado, instala esta página en la pantalla de inicio y activa las notificaciones.</p>
+      <div class="push-actions">
+        <button type="button" class="primary" id="enablePush" disabled>Activar notificaciones</button>
+        <button type="button" class="secondary" id="testPush" hidden>Enviar notificación de prueba</button>
+        <button type="button" class="secondary" id="disablePush" hidden>Desactivar en este dispositivo</button>
+      </div>
+      <p id="pushStatus" role="status" aria-live="polite">Configurando servicio de avisos…</p>
+    </section>
     <div class="club-finder">
       <label class="search-label" for="clubSearch">Buscar equipo</label>
       <div class="searchwrap">
@@ -84,6 +105,102 @@ const db=createClient("https://cpqvrmorbwrrorrsobgj.supabase.co","sb_publishable
  {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const $=id=>document.getElementById(id);
 let busy=false;
+const pushUrl="https://cpqvrmorbwrrorrsobgj.supabase.co/functions/v1/futbolito-web-push";
+const pushKey="sb_publishable_KDivcfl1sf6CumXuMhi77w_k-01gmD4";
+let vapidServerKey=null;
+let swPromise=null;
+const supportedPush="serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+const installed=()=>window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+const isIPhone=()=>/iPhone|iPad|iPod/.test(navigator.userAgent);
+function showPushStatus(text,error=false){
+ $("pushStatus").textContent=text;
+ $("pushStatus").style.color=error?"#ffadb7":"#c5e4d8";
+}
+function decodeBase64Url(base64){
+ const binary=atob(base64.replace(/-/g,"+").replace(/_/g,"/")+"=".repeat((4-base64.length%4)%4));
+ return Uint8Array.from(binary,c=>c.charCodeAt(0));
+}
+async function pushApi(payload){
+ const {data:{session}}=await db.auth.getSession();
+ if(!session?.access_token)throw Error("Inicia sesión nuevamente.");
+ const res=await fetch(pushUrl,{
+  method:"POST",
+  headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"apikey":pushKey},
+  body:JSON.stringify(payload)
+ });
+ const response=await res.json().catch(()=>({}));
+ if(!res.ok||response.ok===false)throw Error(response.error||"No se pudo contactar el servicio de notificaciones.");
+ return response;
+}
+async function primePush(){
+ if(!supportedPush){
+  showPushStatus("Este navegador todavía no permite notificaciones Web Push.",true);return;
+ }
+ if(isIPhone()&&!installed()){
+  showPushStatus("En iPhone: abre esta página en Safari, toca Compartir y selecciona «Agregar a inicio». Luego abre Futbolito desde su ícono.");
+  return;
+ }
+ try{
+  swPromise=navigator.serviceWorker.register("./sw.js",{scope:"./"});
+  const [result]=await Promise.all([pushApi({action:"config"}),swPromise]);
+  vapidServerKey=result.publicKey;
+  $("enablePush").disabled=false;
+  const sw=await navigator.serviceWorker.ready;
+  const subscription=await sw.pushManager.getSubscription();
+  if(subscription&&Notification.permission==="granted"){
+    $("testPush").hidden=false;
+    $("disablePush").hidden=false;
+    $("enablePush").textContent="Actualizar notificaciones";
+    showPushStatus("✓ Notificaciones autorizadas en este dispositivo. Puedes enviarte una prueba.");
+  }else{
+    showPushStatus("Pulsa «Activar notificaciones» para permitir avisos automáticos en este dispositivo.");
+  }
+ }catch(error){showPushStatus(error.message||"No pudimos preparar las notificaciones.",true)}
+}
+$("enablePush").addEventListener("click",async()=>{
+ if(!$("enablePush").disabled && vapidServerKey){
+  const btn=$("enablePush");
+  btn.disabled=true;
+  try{
+   // Pedir permiso dentro de la interacción directa del usuario (requisito iOS).
+   const permission=await Notification.requestPermission();
+   if(permission!=="granted")throw Error("Los avisos no están permitidos. Revísalo en Ajustes → Notificaciones.");
+   const sw=await navigator.serviceWorker.ready;
+   const previous=await sw.pushManager.getSubscription();
+   const subscription=previous||await sw.pushManager.subscribe({
+    userVisibleOnly:true,applicationServerKey:decodeBase64Url(vapidServerKey)
+   });
+   await pushApi({action:"subscribe",subscription:subscription.toJSON()});
+   showPushStatus("✓ Listo: tu dispositivo quedó registrado para avisos de accesos pendientes.");
+   $("testPush").hidden=false;$("disablePush").hidden=false;
+   btn.textContent="Actualizar notificaciones";
+  }catch(error){showPushStatus(error.message||"No pudimos activar los avisos.",true)}
+  finally{btn.disabled=false}
+ }
+});
+$("testPush").addEventListener("click",async()=>{
+ const btn=$("testPush");btn.disabled=true;showPushStatus("Enviando aviso de prueba…");
+ try{
+  const r=await pushApi({action:"test"});
+  showPushStatus(r.delivered>0?"✓ Prueba enviada. Revisa las notificaciones de este teléfono.":"No hay dispositivos registrados o la entrega falló.",!r.delivered);
+ }catch(e){showPushStatus(e.message,true)}
+ finally{btn.disabled=false}
+});
+$("disablePush").addEventListener("click",async()=>{
+ const btn=$("disablePush");btn.disabled=true;
+ try{
+  const sw=await navigator.serviceWorker.ready;
+  const subscription=await sw.pushManager.getSubscription();
+  if(subscription){
+   await pushApi({action:"unsubscribe",endpoint:subscription.endpoint});
+   await subscription.unsubscribe();
+  }
+  $("testPush").hidden=true;$("disablePush").hidden=true;
+  $("enablePush").textContent="Activar notificaciones";
+  showPushStatus("Avisos desactivados en este dispositivo.");
+ }catch(e){showPushStatus(e.message,true)}
+ finally{btn.disabled=false}
+});
 let visibleClubs=[], expanded=false, currentMatches=[];
 const MAX_PREVIEW=6;
 const normalize=text=>String(text??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("es").replace(/[^a-z0-9]+/g," ").trim().replace(/\s+/g," ");
@@ -158,6 +275,8 @@ function showClubs(clubs,isGeneral,roles){
  $("intro").textContent=isGeneral?
  "Como administrador general puedes entrar a cualquiera de los clubes.":"Solamente puedes acceder a tus equipos autorizados.";
  $("role").textContent=isGeneral?"ADMINISTRADOR GENERAL":"ACCESO AUTORIZADO";
+ $("pushPanel").hidden=!isGeneral;
+ if(isGeneral)primePush();
  $("adminLink").hidden=!isGeneral&&!roles.some(r=>r.role==="manager");
  $("usersLink").hidden=!isGeneral&&!roles.some(r=>r.role==="manager");
  visibleClubs=clubs;
