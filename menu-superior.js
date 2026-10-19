@@ -5,7 +5,7 @@ const $=id=>document.getElementById(id);
 const originalButton=$("shareBtn"),top=document.querySelector(".top-actions");
 if(!originalButton||!top)return;
 try{
- const res=await fetch("/Marcador-futbolito/menu-superior.html?v=20261018-clausura30-v1",{cache:"no-cache"});
+ const res=await fetch("/Marcador-futbolito/menu-superior.html?v=20261018-filtros-fechas-v2",{cache:"no-cache"});
  if(!res.ok)throw Error("No fue posible cargar los nuevos menús.");
  const tpl=document.createElement("template");tpl.innerHTML=await res.text();
  document.body.appendChild(tpl.content);
@@ -34,7 +34,7 @@ try{
  async function loadExtension(path){
   await new Promise((resolve,reject)=>{
    const script=document.createElement("script");
-   script.src="/Marcador-futbolito/"+path+"?v=20261018-clausura30-v1";
+   script.src="/Marcador-futbolito/"+path+"?v=20261018-filtros-fechas-v2";
    script.onload=resolve;
    script.onerror=()=>reject(Error("No se pudo cargar "+path));
    document.body.appendChild(script);
