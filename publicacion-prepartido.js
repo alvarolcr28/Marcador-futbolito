@@ -366,11 +366,15 @@
     if(f.error)throw f.error;
     const names=new Map(comps.map(x=>[x.id,x.name]));
     const rivals=new Map((o.data||[]).map(x=>[x.id,x.name]));
+    // El anuncio prepartido solo muestra encuentros del plantel que se está usando.
+    // No modifica la programación ni las fechas guardadas en la base.
     return (f.data||[]).map(row=>({
      ...row,competition:names.get(row.competition_id)||"Campeonato",
      rival:rivals.get(row.opponent_id)||"Rival",
      team:teamFor(names.get(row.competition_id))
-    })).sort((a,b)=>(a.scheduled_at||a.scheduled_on||"9999").localeCompare(b.scheduled_at||b.scheduled_on||"9999"));
+    })).filter(row=>row.team===localName()).sort((a,b)=>
+     (a.scheduled_at||a.scheduled_on||"9999").localeCompare(b.scheduled_at||b.scheduled_on||"9999")||
+     Number(a.round_name.match(/\d+/)?.[0]||0)-Number(b.round_name.match(/\d+/)?.[0]||0));
    })();
    const list=await Promise.race([job,new Promise((_,rej)=>setTimeout(()=>rej(Error("Tiempo excedido")),12000))]);
    if(seq!==requestId||!dialog.open)return;
@@ -380,7 +384,7 @@
     select.add(new Option(f.team+" · "+f.round_name+" · "+f.rival+(date?" · "+date+(t.time?" "+t.time:""):" · Fecha sin confirmar"),f.id));
    });
    select.disabled=false;
-   $("pgFixtureHint").textContent=list.length?"Selecciona un encuentro o edita los datos manualmente.":"No hay partidos programados; puedes completar el anuncio manualmente.";
+   $("pgFixtureHint").textContent=list.length?"Mostrando solamente las fechas de "+localName()+". Puedes editar la publicación sin cambiar la programación.":"No hay partidos pendientes para "+localName()+"; puedes completar el anuncio manualmente.";
    const todayParts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Santiago",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
    const today=Object.fromEntries(todayParts.filter(p=>p.type!=="literal").map(p=>[p.type,p.value]));
    const currentDay=today.year+"-"+today.month+"-"+today.day;
