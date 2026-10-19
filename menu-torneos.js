@@ -91,7 +91,7 @@ function showFixtures(){
  const root=$("hubFixtureList");root.replaceChildren();
  const selected=$("hubCompSelect").value;
  const list=fixtures.filter(f=>f.competition_id===selected).sort((a,b)=>
-  (Number(a.round_name.match(/\\d+/)?.[0]||0)-Number(b.round_name.match(/\\d+/)?.[0]||0))||
+  (Number(a.round_name.match(/\d+/)?.[0]||0)-Number(b.round_name.match(/\d+/)?.[0]||0))||
   a.round_name.localeCompare(b.round_name,"es"));
  if(!selected){
   const p=document.createElement("p");p.className="fhub-small";p.textContent="Selecciona un campeonato para ver sus partidos.";root.append(p);return;
