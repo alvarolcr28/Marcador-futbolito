@@ -41,6 +41,18 @@
 <strong>💾 Registrar y consultar resultados</strong>
 <p class="fhub-small">Cuando finalices un encuentro en el marcador, intentaremos guardarlo en Supabase. También puedes guardarlo manualmente.</p>
 <div class="fhub-actions"><button id="hubArchiveNow" class="btn primary">Guardar resultado del partido actual</button><button id="hubRefreshHistory" class="btn">Actualizar historial</button></div>
+<div class="fhub-line" style="margin-top:12px">
+ <strong>📊 Todos los partidos del equipo</strong>
+ <p class="fhub-small">Se muestran todos los partidos archivados. La clasificación es opcional: los partidos sin torneo permanecen visibles como «Sin clasificar».</p>
+ <div class="fhub-grid">
+  <label class="fhub-field">Plantel<select id="hubHistorySquad"><option value="all">Todos los planteles</option></select></label>
+  <label class="fhub-field">Tipo de encuentro<select id="hubHistoryType"><option value="all">Todos los partidos</option><option value="friendly">Amistosos</option><option value="league">Liga</option><option value="tournament">Campeonato / copa</option><option value="unclassified">Sin clasificar</option></select></label>
+  <label class="fhub-field">Campeonato<select id="hubHistoryCompetition"><option value="all">Todos los campeonatos</option></select></label>
+ </div>
+ <div id="hubHistoryStats" class="fhub-status" role="status">Aún no se han cargado partidos.</div>
+ <div class="fhub-actions"><button type="button" id="hubHistoryExport" class="btn">⬇ Descargar historial CSV</button></div>
+</div>
 <div id="hubHistoryList" class="fhub-list"></div>
+<p class="fhub-small">Liga HZ (Copa Fácil): <a href="https://copafacil.com/-ctg2w" target="_blank" rel="noopener noreferrer">Consultar fixture y resultados oficiales ↗</a>. Este enlace abre el campeonato original; todavía no sincroniza datos automáticamente.</p>
 </div>
 <div id="hubTournamentStatus" class="fhub-status" role="status">Selecciona un equipo para cargar sus torneos.</div>
