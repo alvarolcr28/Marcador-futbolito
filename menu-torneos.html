@@ -1,11 +1,14 @@
 
 <div class="fhub-line">
 <strong>⚽ Preparar partido</strong>
-<p class="fhub-small">Elige un rival frecuente o escribe uno directamente en el marcador. Los campeonatos son opcionales.</p>
+<p class="fhub-small">Elige primero el torneo: aparecerán únicamente sus rivales y fechas registradas. También puedes preparar un amistoso.</p>
+<label class="fhub-field">Campeonato para preparar<select id="hubPrepCompetition"><option value="">Amistoso · sin campeonato</option></select></label>
 <div class="fhub-grid">
- <label class="fhub-field">Rivales registrados<select id="hubOpponentSelect"><option value="">Seleccionar rival</option></select></label>
+ <label class="fhub-field">Fecha o ronda<select id="hubPrepRound"><option value="">Seleccionar fecha</option></select></label>
+ <label class="fhub-field">Rival de la fecha<select id="hubOpponentSelect"><option value="">Seleccionar rival</option></select></label>
  <label class="fhub-field">Nuevo rival<input id="hubOpponentNew" maxlength="90" placeholder="Ej.: Hattrick"></label>
 </div>
+<p id="hubPrepHint" class="fhub-small" role="status">Selecciona una fecha o un rival para completar el partido.</p>
 <div class="fhub-actions">
  <button id="hubOpponentUse" class="btn primary">Cargar rival en marcador</button>
  <button id="hubOpponentSave" class="btn">Guardar nuevo rival</button>
@@ -29,11 +32,12 @@
 <strong>📅 Programación y rondas</strong>
 <label class="fhub-field">Campeonato activo<select id="hubCompSelect"><option value="">Sin campeonato · amistoso</option></select></label>
 <div class="fhub-grid">
- <label class="fhub-field">Ronda o fecha<input id="hubRound" maxlength="90" value="Fecha 1" list="hubRoundExamples"></label>
+ <label class="fhub-field">Ronda o fecha<input id="hubRound" maxlength="90" placeholder="Ej.: Fecha 3" list="hubRoundExamples"></label>
  <datalist id="hubRoundExamples"><option value="Fase de grupos"><option value="Octavos de final"><option value="Cuartos de final"><option value="Semifinal"><option value="Final"></datalist>
  <label class="fhub-field">Rival<select id="hubFixtureOpponent"><option value="">Seleccionar rival</option></select></label>
 </div>
-<label class="fhub-field">Fecha programada (opcional)<input id="hubFixtureDate" type="datetime-local"></label>
+<label class="fhub-field">Fecha y hora para partidos nuevos (opcional)<input id="hubFixtureDate" type="datetime-local"></label>
+<p id="hubFixtureInfo" class="fhub-small" role="status">Las fechas ya registradas se muestran sin modificarlas.</p>
 <div class="fhub-actions"><button id="hubFixtureSave" class="btn">Agregar partido programado</button></div>
 <div id="hubFixtureList" class="fhub-list"></div>
 </div>
