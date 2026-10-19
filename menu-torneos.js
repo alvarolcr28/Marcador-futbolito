@@ -5,7 +5,7 @@ const $=id=>document.getElementById(id),hub=()=>window.FutbolitoHub;
 let mounted=false,initialized=false,club=null,admin=false,manager=false;
 let opponents=[],competitions=[],fixtures=[],history=[],busy=false;
 // El contexto de torneo es propio de cada plantel, incluso si dos planteles comparten club.
-const currentSquad=()=>typeof state!=="undefined"?(state.homeTeam||$("homeTeam")?.value||""):"";
+const currentSquad=()=>($("homeTeam")?.value||(typeof state!=="undefined"?state.homeTeam:"")||"");
 const ctxtKey=()=>("futbolito-current-competition:"+hub().slug+":"+currentSquad());
 const storedContext=()=>{try{return JSON.parse(localStorage.getItem(ctxtKey())||"null")||{}}catch{return {}}};
 let ctx={};
@@ -230,22 +230,135 @@ function exportHistoryCSV(){
  document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
  message("Historial exportado: "+filtered.length+" partidos.");
 }
-function render(){
- const rivalSelect=$("hubOpponentSelect"),fixtureOpponent=$("hubFixtureOpponent");
- rivalSelect.replaceChildren(opt("","Seleccionar rival"));
- fixtureOpponent.replaceChildren(opt("","Seleccionar rival"));
- for(const o of opponents){
-  rivalSelect.append(opt(o.id,o.name));
-  fixtureOpponent.append(opt(o.id,o.name));
+
+function squadCompetitions(){
+ const team=currentSquad().toLowerCase(),is30=team.includes("+30")||team.includes("más 30"),isTC=/\btc\b/.test(team);
+ return competitions.filter(c=>{
+  if(hub().slug==="larraguibel")return true;
+  const n=c.name.toLowerCase();
+  if(/\+\s*30|más\s*30|mas\s*30/.test(n))return is30;
+  if(/serie\s*e\b|mala clase tc/.test(n))return isTC;
+  return true; // Los torneos sin categoría explícita siguen disponibles.
+ });
+}
+function preferredCompetition(list){
+ const team=currentSquad().toLowerCase();
+ const filtered=list.filter(c=>{
+  const n=c.name.toLowerCase();
+  return (team.includes("+30")||team.includes("más 30"))?/\+\s*30|más\s*30|mas\s*30/.test(n):
+   /\btc\b/.test(team)?/serie\s*e\b|mala clase tc/.test(n):
+   hub().slug==="larraguibel"?/serie\s*d\b/.test(n):false;
+ });
+ return (filtered[0]||list[0])?.id||"";
+}
+function fixtureList(id){
+ return fixtures.filter(f=>f.competition_id===id).sort((a,b)=>
+  Number(a.round_name.match(/\d+/)?.[0]||0)-Number(b.round_name.match(/\d+/)?.[0]||0)||
+  a.round_name.localeCompare(b.round_name,"es"));
+}
+function fixtureRival(f){return opponents.find(o=>o.id===f?.opponent_id)?.name||"Rival";}
+function matchDateLocal(dt){
+ if(!dt)return "";
+ const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Santiago",
+  year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date(dt));
+ const v=Object.fromEntries(parts.filter(p=>p.type!=="literal").map(p=>[p.type,p.value]));
+ return v.year+"-"+v.month+"-"+v.day+"T"+v.hour+":"+v.minute;
+}
+function setFixtureFields(f,keepManualRound=false){
+ const r=$("hubRound"),date=$("hubFixtureDate"),info=$("hubFixtureInfo"),prep=$("hubPrepRound");
+ if(f){
+  r.value=f.round_name;
+  $("hubOpponentSelect").value=f.opponent_id||"";
+  $("hubFixtureOpponent").value=f.opponent_id||"";
+  prep.value=f.id;
+  date.value=matchDateLocal(f.scheduled_at);
+  date.disabled=true; // No modificar las fechas y horas acordadas.
+  $("hubFixtureSave").disabled=true;
+  const when=f.scheduled_at?localDate(f.scheduled_at):f.scheduled_on?roundDateOnly(f.scheduled_on):"Sin día confirmado";
+  info.textContent=f.round_name+": "+(f.status==="bye"?"Fecha libre":fixtureRival(f))+" · "+when+
+   (f.venue?" · "+f.venue:"")+". Jornada registrada; no se duplicará ni alterará.";
+  $("hubPrepHint").textContent=f.status==="bye"?"Esta jornada es libre; no hay rival para preparar.":
+   f.round_name+" · "+fixtureRival(f)+(f.status==="played"?" · Partido jugado":"");
+  $("hubOpponentUse").disabled=f.status!=="scheduled";
+ }else{
+  if(!keepManualRound)r.value="";
+  prep.value="";
+  date.disabled=false;
+  date.value="";
+  $("hubFixtureSave").disabled=!manager||!$("hubCompSelect").value;
+  info.textContent="Las fechas y horas existentes son fijas. Para otra jornada nueva, introduce sus datos.";
+  $("hubPrepHint").textContent=$("hubCompSelect").value?
+   "Selecciona una fecha o rival de este torneo.":"Amistoso: puedes elegir cualquier rival guardado.";
+  $("hubOpponentUse").disabled=!$("hubOpponentSelect").value;
  }
- const compSelect=$("hubCompSelect");
- const current=ctx.competitionId||compSelect.value;
+}
+function buildFixtureSelectors({reset=false}={}){
+ const id=$("hubCompSelect").value,list=fixtureList(id);
+ const oldPrep=reset?"":$("hubPrepRound").value,oldRound=reset?"":$("hubRound").value;
+ const oldRival=reset?"":$("hubOpponentSelect").value;
+ const prep=$("hubPrepRound"),opp=$("hubOpponentSelect"),program=$("hubFixtureOpponent");
+ $("hubPrepCompetition").value=id;
+ prep.replaceChildren(opt("","Seleccionar fecha"));
+ list.forEach(f=>prep.append(opt(f.id,f.round_name+" · "+(f.status==="bye"?"Libre":fixtureRival(f)))));
+ opp.replaceChildren(opt("",id?"Seleccionar rival del torneo":"Seleccionar rival"));
+ program.replaceChildren(opt("","Seleccionar rival"));
+ const visible=id?opponents.filter(o=>list.some(f=>f.opponent_id===o.id)):opponents;
+ for(const o of visible){
+  const rounds=list.filter(f=>f.opponent_id===o.id).map(f=>f.round_name).join(", ");
+  opp.append(opt(o.id,(rounds?rounds+" · ":"")+o.name));
+  program.append(opt(o.id,o.name));
+ }
+ // Un torneo recién creado puede programar su primera fecha con los rivales del club.
+ if(id&&!visible.length)for(const o of opponents)program.append(opt(o.id,o.name));
+ const match=list.find(f=>f.id===oldPrep)||list.find(f=>f.round_name.toLowerCase()===oldRound.trim().toLowerCase())||
+  list.find(f=>f.id===ctx.fixtureId)||list.find(f=>f.status==="scheduled")||null;
+ if(match)setFixtureFields(match);
+ else {
+  opp.value=visible.some(o=>o.id===oldRival)?oldRival:"";
+  setFixtureFields(null,Boolean(oldRound));
+ }
+}
+function programByRound(){
+ const name=$("hubRound").value.trim().toLocaleLowerCase("es");
+ const f=fixtureList($("hubCompSelect").value).find(x=>x.round_name.trim().toLocaleLowerCase("es")===name);
+ setFixtureFields(f||null,!f);
+}
+function programByRival(fromPrep=false){
+ const id=$(fromPrep?"hubOpponentSelect":"hubFixtureOpponent").value,list=fixtureList($("hubCompSelect").value);
+ const candidates=list.filter(f=>f.opponent_id===id);
+ const current=list.find(f=>f.id===$("hubPrepRound").value);
+ const f=candidates.find(x=>x.id===current?.id)||candidates.find(x=>x.status==="scheduled")||candidates[0];
+ if(f)setFixtureFields(f);
+ else {
+  if(fromPrep)$("hubFixtureOpponent").value=id;
+  setFixtureFields(null,true);
+  $("hubOpponentSelect").value=id;
+  $("hubFixtureOpponent").value=id;
+  $("hubOpponentUse").disabled=!id;
+ }
+}
+function activeCompetitionChanged(value){
+ ctx.competitionId=value||null;ctx.fixtureId=null;keepContext();
+ $("hubCompSelect").value=value;
+ $("hubPrepCompetition").value=value;
+ buildFixtureSelectors({reset:true});showFixtures();
+ const selected=competitions.find(c=>c.id===value);
+ message(selected?"Campeonato seleccionado: "+selected.name:"Modo amistoso seleccionado.");
+}
+
+function render(){
+ const compSelect=$("hubCompSelect"),options=squadCompetitions(),current=ctx.competitionId||compSelect.value;
  compSelect.replaceChildren(opt("","Sin campeonato · amistoso"));
- for(const c of competitions)compSelect.append(opt(c.id,c.name+" · "+formatMode(c.format)+(c.status==="archived"?" (archivado)":"")));
- compSelect.value=competitions.some(c=>c.id===current)?current:"";
- $("hubFixtureSave").disabled=!manager;
+ for(const c of options)compSelect.append(opt(c.id,c.name+" · "+formatMode(c.format)+(c.status==="archived"?" (archivado)":"")));
+ const selected=options.some(c=>c.id===current)?current:preferredCompetition(options);
+ compSelect.value=selected;
+ ctx.competitionId=selected||null;
+ keepContext();
+ const prepComp=$("hubPrepCompetition");
+ prepComp.replaceChildren(...[...compSelect.options].map(o=>opt(o.value,o.textContent)));
  $("hubCompSave").disabled=!manager;
  $("hubOpponentSave").disabled=!manager;
+ buildFixtureSelectors();
  showFixtures();populateHistoryFilters();renderHistory();
 }
 async function refresh(){
@@ -257,7 +370,7 @@ async function refresh(){
 async function mount(target){
  if(!mounted){
   mounted=true;
-  const res=await fetch("/Marcador-futbolito/menu-torneos.html?v=20261018-resultados1",{cache:"no-cache"});
+  const res=await fetch("/Marcador-futbolito/menu-torneos.html?v=20261018-torneo-selectores-v2",{cache:"no-cache"});
   if(!res.ok)throw Error("No se pudo cargar el menú de campeonato.");
   target.innerHTML=await res.text();
   bind();
@@ -277,10 +390,17 @@ function bind(){
   const r=await db.from("club_opponents").insert({club_id:club.id,name}).select("id,name").single();
   if(r.error)throw r.error;
   $("hubOpponentNew").value="";
-  await queryAll();message("Rival "+name+" guardado.");
+  await queryAll();message("Rival "+name+" guardado. Al programarlo en una jornada aparecerá entre los rivales del torneo.");
  }));
  $("hubOpponentUse").addEventListener("click",()=>{
-  try{chooseOpponent($("hubOpponentSelect").value)}catch(e){message(e.message,true)}
+  try{
+   const selected=$("hubCompSelect").value,opponent=$("hubOpponentSelect").value;
+   const list=fixtureList(selected),f=list.find(x=>x.id===$("hubPrepRound").value&&x.opponent_id===opponent);
+   if(selected&&!f)throw Error("Selecciona una fecha del torneo antes de preparar el partido.");
+   if(f&&f.status!=="scheduled")throw Error("Solo se pueden preparar partidos pendientes.");
+   ctx.competitionId=selected||null;ctx.fixtureId=f?.id||null;keepContext();
+   chooseOpponent(opponent);
+  }catch(e){message(e.message,true)}
  });
  $("hubCompSave").addEventListener("click",()=>perform(async()=>{
   if(!manager)throw Error("Solo un encargado o administrador puede crear campeonatos.");
@@ -296,17 +416,23 @@ function bind(){
   $("hubCompNew").value="";
   await queryAll();message("Campeonato "+name+" creado. Ahora puedes agregar rivales y rondas.");
  }));
- $("hubCompSelect").addEventListener("change",()=>{
-  ctx.competitionId=$("hubCompSelect").value||null;ctx.fixtureId=null;keepContext();showFixtures();
-  const selected=competitions.find(c=>c.id===ctx.competitionId);
-  message(selected?"Campeonato seleccionado: "+selected.name:"Modo amistoso seleccionado.");
+ $("hubCompSelect").addEventListener("change",()=>activeCompetitionChanged($("hubCompSelect").value));
+ $("hubPrepCompetition").addEventListener("change",()=>activeCompetitionChanged($("hubPrepCompetition").value));
+ $("hubPrepRound").addEventListener("change",()=>{
+  const f=fixtureList($("hubCompSelect").value).find(x=>x.id===$("hubPrepRound").value);
+  setFixtureFields(f||null);
  });
+ $("hubOpponentSelect").addEventListener("change",()=>programByRival(true));
+ $("hubRound").addEventListener("input",programByRound);
+ $("hubFixtureOpponent").addEventListener("change",()=>programByRival(false));
  $("hubFixtureSave").addEventListener("click",()=>perform(async()=>{
   if(!manager)throw Error("Solo un encargado o administrador puede programar fechas.");
   const competitionId=$("hubCompSelect").value,opponentId=$("hubFixtureOpponent").value;
   const round=$("hubRound").value.trim(),when=$("hubFixtureDate").value;
   if(!competitionId||!opponentId)throw Error("Selecciona campeonato y rival.");
   if(!round||round.length>90)throw Error("Ingresa una ronda o fecha válida.");
+  if(fixtureList(competitionId).some(f=>f.round_name.trim().toLocaleLowerCase("es")===round.toLocaleLowerCase("es")))
+   throw Error("Esta jornada ya está registrada. Su rival, fecha y hora no se modificarán.");
   const db=await api();
   const r=await db.from("competition_fixtures").insert({
    competition_id:competitionId,opponent_id:opponentId,round_name:round,
