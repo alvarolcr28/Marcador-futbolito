@@ -50,7 +50,7 @@ async function queryAll(){
  const [o,c,f,h]=await Promise.all([
   db.from("club_opponents").select("id,name").eq("club_id",club.id).order("name"),
   db.from("club_competitions").select("id,name,format,status").eq("club_id",club.id).order("created_at",{ascending:false}),
-  db.from("competition_fixtures").select("id,competition_id,opponent_id,round_name,scheduled_at,status").order("created_at",{ascending:false}).limit(200),
+  db.from("competition_fixtures").select("id,competition_id,opponent_id,round_name,scheduled_at,status,venue").order("created_at",{ascending:false}).limit(200),
   fetchAllHistory(db)
  ]);
  for(const r of [o,c,f])if(r.error)throw r.error;
@@ -93,7 +93,7 @@ function showFixtures(){
   const rival=opponents.find(o=>o.id===f.opponent_id)?.name||"Rival";
   const row=document.createElement("div");row.className="fhub-item";
   const title=document.createElement("strong");title.textContent=f.round_name+" · "+rival;
-  const note=document.createElement("small");note.textContent=localDate(f.scheduled_at)+" · "+(f.status==="played"?"Jugado":f.status==="cancelled"?"Cancelado":"Pendiente");
+  const note=document.createElement("small");note.textContent=localDate(f.scheduled_at)+(f.venue?" · "+f.venue:"")+" · "+(f.status==="played"?"Jugado":f.status==="cancelled"?"Cancelado":"Pendiente");
   const b=button("Preparar este partido",async()=>{
    ctx.competitionId=f.competition_id;ctx.fixtureId=f.id;keepContext();
    chooseOpponent(f.opponent_id);
