@@ -81,7 +81,7 @@ function formatMode(f){
 }
 function localDate(d){
  if(!d)return "Sin fecha definida";
- return new Date(d).toLocaleString("es-CL",{dateStyle:"medium",timeStyle:"short"});
+ return new Date(d).toLocaleString("es-CL",{dateStyle:"medium",timeStyle:"short",timeZone:"America/Santiago"});
 }
 function roundDateOnly(d){
  if(!d)return "Sin fecha definida";
@@ -111,6 +111,7 @@ function showFixtures(){
   const b=button(f.status==="bye"?"Descanso de jornada":"Preparar este partido",async()=>{
    ctx.competitionId=f.competition_id;ctx.fixtureId=f.id;keepContext();
    chooseOpponent(f.opponent_id);
+   setFixtureFields(f);
    message("Partido seleccionado: "+rival+" · "+f.round_name+". La próxima finalización se asociará a esta fecha.");
   });
   b.disabled=f.status!=="scheduled";
