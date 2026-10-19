@@ -50,7 +50,7 @@ async function queryAll(){
  const [o,c,f,h]=await Promise.all([
   db.from("club_opponents").select("id,name").eq("club_id",club.id).order("name"),
   db.from("club_competitions").select("id,name,format,status").eq("club_id",club.id).order("created_at",{ascending:false}),
-  db.from("competition_fixtures").select("id,competition_id,opponent_id,round_name,scheduled_at,status,venue").order("created_at",{ascending:false}).limit(200),
+  db.from("competition_fixtures").select("id,competition_id,opponent_id,round_name,scheduled_at,scheduled_on,status,venue").order("created_at",{ascending:false}).limit(200),
   fetchAllHistory(db)
  ]);
  for(const r of [o,c,f])if(r.error)throw r.error;
@@ -83,10 +83,16 @@ function localDate(d){
  if(!d)return "Sin fecha definida";
  return new Date(d).toLocaleString("es-CL",{dateStyle:"medium",timeStyle:"short"});
 }
+function roundDateOnly(d){
+ if(!d)return "Sin fecha definida";
+ return new Intl.DateTimeFormat("es-CL",{dateStyle:"medium",timeZone:"UTC"}).format(new Date(d+"T12:00:00Z"));
+}
 function showFixtures(){
  const root=$("hubFixtureList");root.replaceChildren();
  const selected=$("hubCompSelect").value;
- const list=fixtures.filter(f=>f.competition_id===selected);
+ const list=fixtures.filter(f=>f.competition_id===selected).sort((a,b)=>
+  (Number(a.round_name.match(/\\d+/)?.[0]||0)-Number(b.round_name.match(/\\d+/)?.[0]||0))||
+  a.round_name.localeCompare(b.round_name,"es"));
  if(!selected){
   const p=document.createElement("p");p.className="fhub-small";p.textContent="Selecciona un campeonato para ver sus partidos.";root.append(p);return;
  }
@@ -94,15 +100,15 @@ function showFixtures(){
   const p=document.createElement("p");p.className="fhub-small";p.textContent="No hay partidos programados todavía.";root.append(p);return;
  }
  for(const f of list){
-  const rival=opponents.find(o=>o.id===f.opponent_id)?.name||"Rival";
+  const rival=f.status==="bye"?"Fecha libre":(opponents.find(o=>o.id===f.opponent_id)?.name||"Rival");
   const row=document.createElement("div");row.className="fhub-item";
   const title=document.createElement("strong");title.textContent=f.round_name+" · "+rival;
   const savedMatch=history.find(m=>m.fixture_id===f.id);
-  const when=f.scheduled_at?localDate(f.scheduled_at):savedMatch?historyDate(savedMatch):"Sin fecha definida";
+  const when=f.scheduled_at?localDate(f.scheduled_at):f.scheduled_on?roundDateOnly(f.scheduled_on):savedMatch?historyDate(savedMatch):"Sin fecha definida";
   const note=document.createElement("small");
-  note.textContent=when+(f.venue?" · "+f.venue:"")+" · "+(f.status==="played"?"Jugado":f.status==="cancelled"?"Cancelado":"Pendiente")+
+  note.textContent=when+(f.venue?" · "+f.venue:"")+" · "+(f.status==="played"?"Jugado":f.status==="cancelled"?"Cancelado":f.status==="bye"?"Sin partido":"Pendiente")+
    (savedMatch?" · "+savedMatch.home_score+"–"+savedMatch.away_score:"");
-  const b=button("Preparar este partido",async()=>{
+  const b=button(f.status==="bye"?"Descanso de jornada":"Preparar este partido",async()=>{
    ctx.competitionId=f.competition_id;ctx.fixtureId=f.id;keepContext();
    chooseOpponent(f.opponent_id);
    message("Partido seleccionado: "+rival+" · "+f.round_name+". La próxima finalización se asociará a esta fecha.");
