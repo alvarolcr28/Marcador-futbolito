@@ -381,7 +381,9 @@
    });
    select.disabled=false;
    $("pgFixtureHint").textContent=list.length?"Selecciona un encuentro o edita los datos manualmente.":"No hay partidos programados; puedes completar el anuncio manualmente.";
-   const currentDay=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Santiago",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+   const todayParts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Santiago",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+   const today=Object.fromEntries(todayParts.filter(p=>p.type!=="literal").map(p=>[p.type,p.value]));
+   const currentDay=today.year+"-"+today.month+"-"+today.day;
    const soon=list.filter(f=>(f.scheduled_on||chile(f.scheduled_at).date)>=currentDay);
    const next=soon.find(f=>f.team===localName())||soon[0];
    if(next&&!edited){select.value=next.id;applyScheduled(next);}
