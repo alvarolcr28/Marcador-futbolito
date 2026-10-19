@@ -11,6 +11,8 @@
  <div class="fhub-head"><h2>📣 Anuncio pre partido</h2><button type="button" class="close" id="pgClose" aria-label="Cerrar editor">✕</button></div>
  <p class="fhub-small">Diseña un anuncio deportivo tipo previa televisiva. La fotografía y los escudos se mantienen en este dispositivo: no se suben al servidor.</p>
  <div class="pg-fields">
+  <label class="fhub-field" style="grid-column:1/-1">📅 Encuentro programado<select id="pgFixture"><option value="">Completar manualmente</option></select></label>
+  <p class="fhub-small" role="status" id="pgFixtureHint" style="grid-column:1/-1;margin:0">Selecciona un encuentro o introduce datos manualmente.</p>
   <label class="fhub-field">Título principal<input id="pgTitle" maxlength="60" value="PRÓXIMO PARTIDO"></label>
   <label class="fhub-field">Torneo / competencia<input id="pgCompetition" maxlength="70" placeholder="Copa Mala Clase"></label>
   <label class="fhub-field">Equipo local<input id="pgHome" maxlength="40"></label>
@@ -319,7 +321,79 @@
  });
  canvas.addEventListener("pointerup",()=>{mouse=null;});
  canvas.addEventListener("pointercancel",()=>{mouse=null;});
+
+ let agenda=[],requestId=0,edited=false;
+ function chile(iso){
+  if(!iso)return {date:"",time:""};
+  const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Santiago",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date(iso));
+  const d=Object.fromEntries(parts.filter(p=>p.type!=="literal").map(p=>[p.type,p.value]));
+  return {date:d.year+"-"+d.month+"-"+d.day,time:d.hour+":"+d.minute};
+ }
+ function teamFor(name){
+  const n=(name||"").toLowerCase();
+  if((document.documentElement.dataset.club||"mala-clase")==="larraguibel")return "Larraguibel";
+  if(n.includes("liga hz")&&n.includes("+30"))return "Mala Clase +30";
+  if(n.includes("liga hz")&&n.includes("serie e"))return "Mala Clase TC";
+  return localName();
+ }
+ function applyScheduled(f){
+  const d=chile(f.scheduled_at);
+  Object.entries({pgTitle:"PRÓXIMO PARTIDO",pgHome:f.team,pgAway:f.rival,pgCompetition:f.competition,pgTagline:f.round_name,pgDate:d.date,pgTime:d.time,pgVenue:f.venue||""}).forEach(([key,val])=>$(key).value=val);
+  draw();$("pgFixtureHint").textContent="✓ "+f.round_name+" cargada. Puedes ajustar todos los datos, la foto y los escudos.";
+ }
+ $("pgFixture").addEventListener("change",()=>{
+  edited=true;
+  const f=agenda.find(x=>x.id===$("pgFixture").value);
+  if(f)applyScheduled(f);
+ });
+ async function loadScheduled(){
+  const seq=++requestId,select=$("pgFixture");
+  select.replaceChildren(new Option("Consultando programación…",""));select.disabled=true;
+  try{
+   const job=(async()=>{
+    const hub=window.FutbolitoHub;
+    if(!hub?.db||!hub?.getClub)throw Error("Acceso del club no disponible.");
+    const [db,club]=await Promise.all([hub.db(),hub.getClub()]);
+    const [c,o]=await Promise.all([
+     db.from("club_competitions").select("id,name").eq("club_id",club.id),
+     db.from("club_opponents").select("id,name").eq("club_id",club.id)
+    ]);
+    if(c.error||o.error)throw c.error||o.error;
+    const comps=c.data||[];if(!comps.length)return [];
+    const f=await db.from("competition_fixtures")
+     .select("id,competition_id,opponent_id,round_name,scheduled_at,venue,status")
+     .in("competition_id",comps.map(x=>x.id)).eq("status","scheduled").limit(300);
+    if(f.error)throw f.error;
+    const names=new Map(comps.map(x=>[x.id,x.name]));
+    const rivals=new Map((o.data||[]).map(x=>[x.id,x.name]));
+    return (f.data||[]).map(row=>({
+     ...row,competition:names.get(row.competition_id)||"Campeonato",
+     rival:rivals.get(row.opponent_id)||"Rival",
+     team:teamFor(names.get(row.competition_id))
+    })).sort((a,b)=>(a.scheduled_at||"9999").localeCompare(b.scheduled_at||"9999"));
+   })();
+   const list=await Promise.race([job,new Promise((_,rej)=>setTimeout(()=>rej(Error("Tiempo excedido")),12000))]);
+   if(seq!==requestId||!dialog.open)return;
+   agenda=list;select.replaceChildren(new Option("Completar manualmente",""));
+   list.forEach(f=>{
+    const t=chile(f.scheduled_at);
+    select.add(new Option(f.team+" · "+f.round_name+" · "+f.rival+(t.date?" · "+t.date+" "+t.time:" · Fecha sin confirmar"),f.id));
+   });
+   select.disabled=false;
+   $("pgFixtureHint").textContent=list.length?"Selecciona un encuentro o edita los datos manualmente.":"No hay partidos programados; puedes completar el anuncio manualmente.";
+   const soon=list.filter(f=>f.scheduled_at&&new Date(f.scheduled_at).getTime()>=Date.now()-3600000);
+   const next=soon.find(f=>f.team===localName())||soon[0];
+   if(next&&!edited){select.value=next.id;applyScheduled(next);}
+  }catch(e){
+   if(seq!==requestId||!dialog.open)return;
+   select.replaceChildren(new Option("Completar manualmente",""));select.disabled=false;
+   $("pgFixtureHint").textContent="No se pudo cargar el calendario. Puedes completar el anuncio manualmente.";
+  }
+ }
  function resetEditor(){
+  requestId++;agenda=[];edited=false;
+  $("pgFixture").replaceChildren(new Option("Completar manualmente",""));
+  $("pgFixtureHint").textContent="Selecciona un encuentro o introduce datos manualmente.";
   $("pgTitle").value="PRÓXIMO PARTIDO";
   $("pgHome").value=localName();
   $("pgAway").value=awayName();
@@ -338,11 +412,11 @@
   trySavedHomeLogo().then(()=>draw()).catch(()=>draw());
  }
  for(const id of ["pgTitle","pgCompetition","pgHome","pgAway","pgDate","pgTime","pgVenue","pgTagline","pgFormat","pgTheme"]){
-  $(id).addEventListener("input",()=>draw());
+  $(id).addEventListener("input",()=>{edited=true;draw();});
  }
  trigger.addEventListener("click",()=>{
   const social=$("fHubSocial");if(social?.open)social.close();
-  resetEditor();dialog.showModal();
+  resetEditor();dialog.showModal();loadScheduled();
  });
  $("pgClose").addEventListener("click",()=>dialog.close());
  dialog.addEventListener("click",event=>{if(event.target===dialog)dialog.close();});
