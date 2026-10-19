@@ -338,7 +338,7 @@
  }
  function applyScheduled(f){
   const d=chile(f.scheduled_at);
-  Object.entries({pgTitle:"PRÓXIMO PARTIDO",pgHome:f.team,pgAway:f.rival,pgCompetition:f.competition,pgTagline:f.round_name,pgDate:d.date,pgTime:d.time,pgVenue:f.venue||""}).forEach(([key,val])=>$(key).value=val);
+  Object.entries({pgTitle:"PRÓXIMO PARTIDO",pgHome:f.team,pgAway:f.rival,pgCompetition:f.competition,pgTagline:f.round_name,pgDate:f.scheduled_on||d.date,pgTime:f.scheduled_at?d.time:"",pgVenue:f.venue||""}).forEach(([key,val])=>$(key).value=val);
   draw();$("pgFixtureHint").textContent="✓ "+f.round_name+" cargada. Puedes ajustar todos los datos, la foto y los escudos.";
  }
  $("pgFixture").addEventListener("change",()=>{
@@ -361,7 +361,7 @@
     if(c.error||o.error)throw c.error||o.error;
     const comps=c.data||[];if(!comps.length)return [];
     const f=await db.from("competition_fixtures")
-     .select("id,competition_id,opponent_id,round_name,scheduled_at,venue,status")
+     .select("id,competition_id,opponent_id,round_name,scheduled_at,scheduled_on,venue,status")
      .in("competition_id",comps.map(x=>x.id)).eq("status","scheduled").limit(300);
     if(f.error)throw f.error;
     const names=new Map(comps.map(x=>[x.id,x.name]));
@@ -370,18 +370,19 @@
      ...row,competition:names.get(row.competition_id)||"Campeonato",
      rival:rivals.get(row.opponent_id)||"Rival",
      team:teamFor(names.get(row.competition_id))
-    })).sort((a,b)=>(a.scheduled_at||"9999").localeCompare(b.scheduled_at||"9999"));
+    })).sort((a,b)=>(a.scheduled_at||a.scheduled_on||"9999").localeCompare(b.scheduled_at||b.scheduled_on||"9999"));
    })();
    const list=await Promise.race([job,new Promise((_,rej)=>setTimeout(()=>rej(Error("Tiempo excedido")),12000))]);
    if(seq!==requestId||!dialog.open)return;
    agenda=list;select.replaceChildren(new Option("Completar manualmente",""));
    list.forEach(f=>{
-    const t=chile(f.scheduled_at);
-    select.add(new Option(f.team+" · "+f.round_name+" · "+f.rival+(t.date?" · "+t.date+" "+t.time:" · Fecha sin confirmar"),f.id));
+    const t=chile(f.scheduled_at),date=f.scheduled_on||t.date;
+    select.add(new Option(f.team+" · "+f.round_name+" · "+f.rival+(date?" · "+date+(t.time?" "+t.time:""):" · Fecha sin confirmar"),f.id));
    });
    select.disabled=false;
    $("pgFixtureHint").textContent=list.length?"Selecciona un encuentro o edita los datos manualmente.":"No hay partidos programados; puedes completar el anuncio manualmente.";
-   const soon=list.filter(f=>f.scheduled_at&&new Date(f.scheduled_at).getTime()>=Date.now()-3600000);
+   const currentDay=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Santiago",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+   const soon=list.filter(f=>(f.scheduled_on||chile(f.scheduled_at).date)>=currentDay);
    const next=soon.find(f=>f.team===localName())||soon[0];
    if(next&&!edited){select.value=next.id;applyScheduled(next);}
   }catch(e){
