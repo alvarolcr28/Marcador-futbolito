@@ -300,13 +300,12 @@ function buildFixtureSelectors({reset=false}={}){
  const prep=$("hubPrepRound"),opp=$("hubOpponentSelect"),program=$("hubFixtureOpponent");
  $("hubPrepCompetition").value=id;
  prep.replaceChildren(opt("","Seleccionar fecha"));
- list.forEach(f=>prep.append(opt(f.id,f.round_name+" · "+(f.status==="bye"?"Libre":fixtureRival(f)))));
+ list.forEach(f=>prep.append(opt(f.id,f.round_name)));
  opp.replaceChildren(opt("",id?"Seleccionar rival del torneo":"Seleccionar rival"));
  program.replaceChildren(opt("","Seleccionar rival"));
  const visible=id?opponents.filter(o=>list.some(f=>f.opponent_id===o.id)):opponents;
  for(const o of visible){
-  const rounds=list.filter(f=>f.opponent_id===o.id).map(f=>f.round_name).join(", ");
-  opp.append(opt(o.id,(rounds?rounds+" · ":"")+o.name));
+  opp.append(opt(o.id,o.name));
   program.append(opt(o.id,o.name));
  }
  // Un torneo recién creado puede programar su primera fecha con los rivales del club.
