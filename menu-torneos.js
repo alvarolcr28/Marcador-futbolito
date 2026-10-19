@@ -251,7 +251,7 @@ async function refresh(){
 async function mount(target){
  if(!mounted){
   mounted=true;
-  const res=await fetch("/Marcador-futbolito/menu-torneos.html?v=20261017-1",{cache:"no-cache"});
+  const res=await fetch("/Marcador-futbolito/menu-torneos.html?v=20261018-resultados1",{cache:"no-cache"});
   if(!res.ok)throw Error("No se pudo cargar el menú de campeonato.");
   target.innerHTML=await res.text();
   bind();
