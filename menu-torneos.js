@@ -33,11 +33,11 @@ async function clubInfo(){
  return db;
 }
 async function fetchAllHistory(db){
- const cols="id,competition_id,fixture_id,home_name,away_name,home_score,away_score,total_fouls,period_fouls,yellow_cards,red_cards,goals,half_minutes,fouls_by_period,ended_at";
+ const cols="id,competition_id,fixture_id,home_name,away_name,home_score,away_score,total_fouls,period_fouls,yellow_cards,red_cards,goals,half_minutes,fouls_by_period,ended_at,played_on,result_only,created_at";
  const out=[],size=500;
  // Paginación real: no se descartan los partidos 81 en adelante.
  for(let start=0;start<50000;start+=size){
-  const part=await db.from("match_history").select(cols).eq("club_id",club.id).order("ended_at",{ascending:false}).range(start,start+size-1);
+  const part=await db.from("match_history").select(cols).eq("club_id",club.id).order("created_at",{ascending:false}).range(start,start+size-1);
   if(part.error)throw part.error;
   const rows=part.data||[];out.push(...rows);
   if(rows.length<size)return out;
@@ -57,7 +57,11 @@ async function queryAll(){
  opponents=o.data||[];competitions=c.data||[];
  const ids=new Set(competitions.map(x=>x.id));
  fixtures=(f.data||[]).filter(x=>ids.has(x.competition_id));
- history=h;
+ history=h.sort((a,b)=>{
+  const da=a.played_on||(a.ended_at||a.created_at||"").slice(0,10);
+  const db=b.played_on||(b.ended_at||b.created_at||"").slice(0,10);
+  return db.localeCompare(da)||String(b.created_at||"").localeCompare(String(a.created_at||""));
+ });
  render();
 }
 function chooseOpponent(id){
@@ -93,7 +97,11 @@ function showFixtures(){
   const rival=opponents.find(o=>o.id===f.opponent_id)?.name||"Rival";
   const row=document.createElement("div");row.className="fhub-item";
   const title=document.createElement("strong");title.textContent=f.round_name+" · "+rival;
-  const note=document.createElement("small");note.textContent=localDate(f.scheduled_at)+(f.venue?" · "+f.venue:"")+" · "+(f.status==="played"?"Jugado":f.status==="cancelled"?"Cancelado":"Pendiente");
+  const savedMatch=history.find(m=>m.fixture_id===f.id);
+  const when=f.scheduled_at?localDate(f.scheduled_at):savedMatch?historyDate(savedMatch):"Sin fecha definida";
+  const note=document.createElement("small");
+  note.textContent=when+(f.venue?" · "+f.venue:"")+" · "+(f.status==="played"?"Jugado":f.status==="cancelled"?"Cancelado":"Pendiente")+
+   (savedMatch?" · "+savedMatch.home_score+"–"+savedMatch.away_score:"");
   const b=button("Preparar este partido",async()=>{
    ctx.competitionId=f.competition_id;ctx.fixtureId=f.id;keepContext();
    chooseOpponent(f.opponent_id);
@@ -135,6 +143,10 @@ function populateHistoryFilters(){
  competitions.forEach(c=>compEl.append(opt(c.id,c.name)));
  compEl.value=competitions.some(c=>c.id===formerComp)?formerComp:"all";
 }
+function historyDate(match){
+ if(match.played_on)return new Intl.DateTimeFormat("es-CL",{dateStyle:"medium",timeZone:"UTC"}).format(new Date(match.played_on+"T12:00:00Z"));
+ return localDate(match.ended_at);
+}
 function renderHistory(){
  const root=$("hubHistoryList");root.replaceChildren();
  const filtered=visibleHistory();
@@ -149,19 +161,26 @@ function renderHistory(){
   draws=filtered.filter(m=>Number(m.home_score)===Number(m.away_score)).length,losses=count-wins-draws,
   gf=filtered.reduce((n,m)=>n+(Number(m.home_score)||0),0),
   ga=filtered.reduce((n,m)=>n+(Number(m.away_score)||0),0),
-  fouls=filtered.reduce((n,m)=>n+(Number(m.total_fouls?.[0])||0),0),
-  yellows=filtered.reduce((n,m)=>n+(m.yellow_cards||[]).filter(c=>c.team==="home").length,0),
-  reds=filtered.reduce((n,m)=>n+(m.red_cards||[]).filter(c=>c.team==="home").length,0);
+  detailed=filtered.filter(m=>!m.result_only),
+  fouls=detailed.reduce((n,m)=>n+(Number(m.total_fouls?.[0])||0),0),
+  yellows=detailed.reduce((n,m)=>n+(m.yellow_cards||[]).filter(c=>c.team==="home").length,0),
+  reds=detailed.reduce((n,m)=>n+(m.red_cards||[]).filter(c=>c.team==="home").length,0);
  stats.textContent=count+" partidos de "+history.length+" archivados · "+wins+" ganados · "+draws+" empatados · "+losses+" perdidos · "+
   "Rendimiento: "+Math.round(wins/count*100)+"% victorias · Goles: "+gf+" a favor / "+ga+" en contra · "+
   "Diferencia: "+(gf-ga>0?"+":"")+(gf-ga)+" · Promedio a favor: "+(gf/count).toFixed(2)+" · "+
-  "Faltas: "+fouls+" · Amarillas: "+yellows+" · Rojas: "+reds+".";
+  (detailed.length?"Disciplina de "+detailed.length+" partidos detallados: Faltas "+fouls+", amarillas "+yellows+", rojas "+reds+".":
+  "Faltas y tarjetas: sin datos registrados.")+
+  (detailed.length<count?" · "+(count-detailed.length)+" partidos solo con resultado.":"");
  for(const match of filtered){
   const row=document.createElement("details");row.className="fhub-item";
   const heading=document.createElement("summary");heading.style.cursor="pointer";heading.style.fontWeight="900";
   heading.textContent=match.home_name+" "+match.home_score+" - "+match.away_score+" "+match.away_name;
-  const sub=document.createElement("small");sub.textContent=localDate(match.ended_at)+" · "+historyCategoryLabel(match);
+  const sub=document.createElement("small");sub.textContent=historyDate(match)+" · "+historyCategoryLabel(match)+(match.result_only?" · Solo resultado":"");
   row.append(heading,sub);
+  if(match.result_only){
+   row.append(detailsLine("Estadísticas","No registradas: se conoce únicamente el resultado. No se informó el horario."));
+   root.append(row);continue;
+  }
   const f=match.total_fouls||[0,0],fbp=match.fouls_by_period||[[0,0],[0,0]];
   const ys=match.yellow_cards||[],rs=match.red_cards||[],gs=match.goals||[];
   row.append(detailsLine("Faltas totales",f.join(" - ")),
@@ -189,12 +208,14 @@ function renderHistory(){
 function exportHistoryCSV(){
  const filtered=visibleHistory();
  if(!filtered.length){message("No hay partidos para exportar con estos filtros.",true);return;}
- const lines=[["Fecha","Equipo","Rival","Competencia","Tipo","Goles a favor","Goles en contra","Resultado","Faltas","Amarillas","Rojas"]];
+ const lines=[["Fecha","Equipo","Rival","Competencia","Tipo","Goles a favor","Goles en contra","Resultado","Faltas","Amarillas","Rojas","Registro"]];
  for(const m of filtered){
   const outcome=m.home_score>m.away_score?"Ganado":m.home_score<m.away_score?"Perdido":"Empatado";
-  lines.push([localDate(m.ended_at),m.home_name,m.away_name,historyCategoryLabel(m),matchCategory(m),
-   m.home_score,m.away_score,outcome,m.total_fouls?.[0]||0,
-   (m.yellow_cards||[]).filter(c=>c.team==="home").length,(m.red_cards||[]).filter(c=>c.team==="home").length]);
+  lines.push([historyDate(m),m.home_name,m.away_name,historyCategoryLabel(m),matchCategory(m),
+   m.home_score,m.away_score,outcome,m.result_only?"":(m.total_fouls?.[0]??""),
+   m.result_only?"":(m.yellow_cards||[]).filter(c=>c.team==="home").length,
+   m.result_only?"":(m.red_cards||[]).filter(c=>c.team==="home").length,
+   m.result_only?"Solo resultado":"Completo"]);
  }
  const safe=v=>'"'+String(v??"").replaceAll('"','""')+'"';
  const content="\uFEFF"+lines.map(row=>row.map(safe).join(";")).join("\r\n");
