@@ -5,7 +5,7 @@ const $=id=>document.getElementById(id);
 const originalButton=$("shareBtn"),top=document.querySelector(".top-actions");
 if(!originalButton||!top)return;
 try{
- const res=await fetch("/Marcador-futbolito/menu-superior.html?v=20261018-cambio-plantel-v4",{cache:"no-cache"});
+ const res=await fetch("/Marcador-futbolito/menu-superior.html?v=20261018-insignias-club-v5",{cache:"no-cache"});
  if(!res.ok)throw Error("No fue posible cargar los nuevos menús.");
  const tpl=document.createElement("template");tpl.innerHTML=await res.text();
  document.body.appendChild(tpl.content);
@@ -34,7 +34,7 @@ try{
  async function loadExtension(path){
   await new Promise((resolve,reject)=>{
    const script=document.createElement("script");
-   script.src="/Marcador-futbolito/"+path+"?v=20261018-cambio-plantel-v4";
+   script.src="/Marcador-futbolito/"+path+"?v=20261018-insignias-club-v5";
    script.onload=resolve;
    script.onerror=()=>reject(Error("No se pudo cargar "+path));
    document.body.appendChild(script);
@@ -118,12 +118,21 @@ try{
   if(window.FutbolitoQr?.mount)window.FutbolitoQr.mount();
   else $("hubQrStatus").textContent="La configuración de QR todavía está cargando. Intenta de nuevo.";
  });
- // Escudo local predeterminado, guardado en el mismo dispositivo.
+ // El escudo corresponde al club, no al rival: TC y +30 comparten insignia.
  const defaultHomeLogoKey="futbolito-default-home-logo:"+slug;
+ const brand=document.querySelector("header.top .brand");
+ const logoPreview=document.createElement("img");
+ logoPreview.alt="Escudo del club";
+ logoPreview.id="fHubClubCrest";
+ logoPreview.style.cssText="display:none;width:34px;height:34px;object-fit:contain;vertical-align:middle;margin-right:7px";
+ if(brand)brand.prepend(logoPreview);
  function refreshDefaultLogo(){
-  $("hubDefaultLogoStatus").textContent=localStorage.getItem(defaultHomeLogoKey)?
-   "✓ Escudo local guardado en este dispositivo. Se utilizará automáticamente en nuevos QR.":
-   "No hay escudo local guardado. Sin imagen se mostrarán las iniciales.";
+  const currentLogo=localStorage.getItem(defaultHomeLogoKey);
+  if(currentLogo){logoPreview.src=currentLogo;logoPreview.style.display="inline-block";}
+  else{logoPreview.removeAttribute("src");logoPreview.style.display="none";}
+  $("hubDefaultLogoStatus").textContent=currentLogo?
+   "✓ Escudo guardado en este dispositivo. Se utilizará arriba, en QR y en publicaciones de prepartido.":
+   "Todavía no se ha guardado un escudo para este club.";
  }
  const defaultLogoField=$("hubDefaultLogo");
  defaultLogoField.addEventListener("change",async()=>{
