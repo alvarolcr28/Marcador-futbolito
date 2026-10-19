@@ -4,7 +4,9 @@
 const $=id=>document.getElementById(id),hub=()=>window.FutbolitoHub;
 let mounted=false,initialized=false,club=null,admin=false,manager=false;
 let opponents=[],competitions=[],fixtures=[],history=[],busy=false;
-const ctxtKey=()=>("futbolito-current-competition:"+hub().slug);
+// El contexto de torneo es propio de cada plantel, incluso si dos planteles comparten club.
+const currentSquad=()=>typeof state!=="undefined"?(state.homeTeam||$("homeTeam")?.value||""):"";
+const ctxtKey=()=>("futbolito-current-competition:"+hub().slug+":"+currentSquad());
 const storedContext=()=>{try{return JSON.parse(localStorage.getItem(ctxtKey())||"null")||{}}catch{return {}}};
 let ctx={};
 function keepContext(){localStorage.setItem(ctxtKey(),JSON.stringify(ctx))}
@@ -30,6 +32,18 @@ async function clubInfo(){
  admin=a.data===true;manager=m.data===true||admin;
  return db;
 }
+async function fetchAllHistory(db){
+ const cols="id,competition_id,fixture_id,home_name,away_name,home_score,away_score,total_fouls,period_fouls,yellow_cards,red_cards,goals,half_minutes,fouls_by_period,ended_at";
+ const out=[],size=500;
+ // Paginación real: no se descartan los partidos 81 en adelante.
+ for(let start=0;start<50000;start+=size){
+  const part=await db.from("match_history").select(cols).eq("club_id",club.id).order("ended_at",{ascending:false}).range(start,start+size-1);
+  if(part.error)throw part.error;
+  const rows=part.data||[];out.push(...rows);
+  if(rows.length<size)return out;
+ }
+ throw Error("El historial supera 50.000 partidos. Contacta al administrador para cargar el resto.");
+}
 async function queryAll(){
  if(!club)return;
  const db=await api();
@@ -37,13 +51,13 @@ async function queryAll(){
   db.from("club_opponents").select("id,name").eq("club_id",club.id).order("name"),
   db.from("club_competitions").select("id,name,format,status").eq("club_id",club.id).order("created_at",{ascending:false}),
   db.from("competition_fixtures").select("id,competition_id,opponent_id,round_name,scheduled_at,status").order("created_at",{ascending:false}).limit(200),
-  db.from("match_history").select("id,competition_id,fixture_id,home_name,away_name,home_score,away_score,total_fouls,period_fouls,yellow_cards,red_cards,goals,half_minutes,fouls_by_period,ended_at").eq("club_id",club.id).order("ended_at",{ascending:false}).limit(80)
+  fetchAllHistory(db)
  ]);
- for(const r of [o,c,f,h])if(r.error)throw r.error;
+ for(const r of [o,c,f])if(r.error)throw r.error;
  opponents=o.data||[];competitions=c.data||[];
  const ids=new Set(competitions.map(x=>x.id));
  fixtures=(f.data||[]).filter(x=>ids.has(x.competition_id));
- history=h.data||[];
+ history=h;
  render();
 }
 function chooseOpponent(id){
@@ -92,17 +106,63 @@ function showFixtures(){
 function detailsLine(name,value){
  const p=document.createElement("div");p.className="fhub-small";p.textContent=name+": "+value;return p;
 }
+function matchCategory(match){
+ const comp=competitions.find(x=>x.id===match.competition_id);
+ if(!comp)return "unclassified";
+ if(comp.format==="amistoso")return "friendly";
+ if(comp.format==="liga")return "league";
+ return "tournament";
+}
+function visibleHistory(){
+ const squad=$("hubHistorySquad")?.value||"all",type=$("hubHistoryType")?.value||"all",comp=$("hubHistoryCompetition")?.value||"all";
+ return history.filter(m=>(squad==="all"||m.home_name===squad)&&
+  (type==="all"||matchCategory(m)===type)&&
+  (comp==="all"||m.competition_id===comp));
+}
+function historyCategoryLabel(match){
+ const comp=competitions.find(x=>x.id===match.competition_id);
+ return comp?comp.name:"Sin clasificar";
+}
+function populateHistoryFilters(){
+ const squadEl=$("hubHistorySquad"),compEl=$("hubHistoryCompetition");
+ const formerSquad=squadEl.value||"all",formerComp=compEl.value||"all";
+ squadEl.replaceChildren(opt("all","Todos los planteles"));
+ const names=new Set(history.map(m=>m.home_name).filter(Boolean));
+ if(typeof state!=="undefined")Object.keys(state.teams||{}).forEach(n=>names.add(n));
+ [...names].sort((a,b)=>a.localeCompare(b,"es")).forEach(n=>squadEl.append(opt(n,n)));
+ squadEl.value=names.has(formerSquad)?formerSquad:"all";
+ compEl.replaceChildren(opt("all","Todos los campeonatos"));
+ competitions.forEach(c=>compEl.append(opt(c.id,c.name)));
+ compEl.value=competitions.some(c=>c.id===formerComp)?formerComp:"all";
+}
 function renderHistory(){
  const root=$("hubHistoryList");root.replaceChildren();
- if(!history.length){const p=document.createElement("p");p.className="fhub-small";p.textContent="Aún no hay partidos archivados en Supabase.";root.append(p);return;}
- for(const match of history){
+ const filtered=visibleHistory();
+ const stats=$("hubHistoryStats");
+ if(!filtered.length){
+  stats.textContent=history.length?"No hay partidos que coincidan con estos filtros.":"Aún no hay partidos archivados en este club.";
+  const p=document.createElement("p");p.className="fhub-small";
+  p.textContent=history.length?"Prueba otra combinación de filtros.":"Los encuentros aparecerán al finalizar y archivar partidos en Futbolito.";
+  root.append(p);return;
+ }
+ const count=filtered.length,wins=filtered.filter(m=>Number(m.home_score)>Number(m.away_score)).length,
+  draws=filtered.filter(m=>Number(m.home_score)===Number(m.away_score)).length,losses=count-wins-draws,
+  gf=filtered.reduce((n,m)=>n+(Number(m.home_score)||0),0),
+  ga=filtered.reduce((n,m)=>n+(Number(m.away_score)||0),0),
+  fouls=filtered.reduce((n,m)=>n+(Number(m.total_fouls?.[0])||0),0),
+  yellows=filtered.reduce((n,m)=>n+(m.yellow_cards||[]).filter(c=>c.team==="home").length,0),
+  reds=filtered.reduce((n,m)=>n+(m.red_cards||[]).filter(c=>c.team==="home").length,0);
+ stats.textContent=count+" partidos de "+history.length+" archivados · "+wins+" ganados · "+draws+" empatados · "+losses+" perdidos · "+
+  "Rendimiento: "+Math.round(wins/count*100)+"% victorias · Goles: "+gf+" a favor / "+ga+" en contra · "+
+  "Diferencia: "+(gf-ga>0?"+":"")+(gf-ga)+" · Promedio a favor: "+(gf/count).toFixed(2)+" · "+
+  "Faltas: "+fouls+" · Amarillas: "+yellows+" · Rojas: "+reds+".";
+ for(const match of filtered){
   const row=document.createElement("details");row.className="fhub-item";
   const heading=document.createElement("summary");heading.style.cursor="pointer";heading.style.fontWeight="900";
   heading.textContent=match.home_name+" "+match.home_score+" - "+match.away_score+" "+match.away_name;
-  const sub=document.createElement("small");sub.textContent=localDate(match.ended_at)+" · "+(competitions.find(x=>x.id===match.competition_id)?.name||"Amistoso");
+  const sub=document.createElement("small");sub.textContent=localDate(match.ended_at)+" · "+historyCategoryLabel(match);
   row.append(heading,sub);
-  const f=match.total_fouls||[0,0], pf=match.period_fouls||[0,0];
-  const fbp=match.fouls_by_period||[[0,0],[0,0]];
+  const f=match.total_fouls||[0,0],fbp=match.fouls_by_period||[[0,0],[0,0]];
   const ys=match.yellow_cards||[],rs=match.red_cards||[],gs=match.goals||[];
   row.append(detailsLine("Faltas totales",f.join(" - ")),
    detailsLine("Primer tiempo",Array.isArray(fbp[0])?fbp[0].join(" - "):"Sin detalle"),
@@ -126,6 +186,23 @@ function renderHistory(){
   root.append(row);
  }
 }
+function exportHistoryCSV(){
+ const filtered=visibleHistory();
+ if(!filtered.length){message("No hay partidos para exportar con estos filtros.",true);return;}
+ const lines=[["Fecha","Equipo","Rival","Competencia","Tipo","Goles a favor","Goles en contra","Resultado","Faltas","Amarillas","Rojas"]];
+ for(const m of filtered){
+  const outcome=m.home_score>m.away_score?"Ganado":m.home_score<m.away_score?"Perdido":"Empatado";
+  lines.push([localDate(m.ended_at),m.home_name,m.away_name,historyCategoryLabel(m),matchCategory(m),
+   m.home_score,m.away_score,outcome,m.total_fouls?.[0]||0,
+   (m.yellow_cards||[]).filter(c=>c.team==="home").length,(m.red_cards||[]).filter(c=>c.team==="home").length]);
+ }
+ const safe=v=>'"'+String(v??"").replaceAll('"','""')+'"';
+ const content="\uFEFF"+lines.map(row=>row.map(safe).join(";")).join("\r\n");
+ const url=URL.createObjectURL(new Blob([content],{type:"text/csv;charset=utf-8"}));
+ const link=document.createElement("a");link.href=url;link.download="futbolito-historial-"+(hub()?.slug||"club")+".csv";
+ document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+ message("Historial exportado: "+filtered.length+" partidos.");
+}
 function render(){
  const rivalSelect=$("hubOpponentSelect"),fixtureOpponent=$("hubFixtureOpponent");
  rivalSelect.replaceChildren(opt("","Seleccionar rival"));
@@ -142,7 +219,7 @@ function render(){
  $("hubFixtureSave").disabled=!manager;
  $("hubCompSave").disabled=!manager;
  $("hubOpponentSave").disabled=!manager;
- showFixtures();renderHistory();
+ showFixtures();populateHistoryFilters();renderHistory();
 }
 async function refresh(){
  message("Actualizando rivales, campeonatos y partidos…");
@@ -211,6 +288,9 @@ function bind(){
   if(r.error)throw r.error;
   await queryAll();message("Partido programado: "+round+". Selecciónalo para precargar el rival.");
  }));
+ ["hubHistorySquad","hubHistoryType","hubHistoryCompetition"].forEach(id=>$(id).addEventListener("change",renderHistory));
+ $("hubHistoryExport").addEventListener("click",exportHistoryCSV);
+ $("homeTeam")?.addEventListener("change",()=>{ctx=storedContext();if(mounted)render();});
  $("hubRefreshHistory").addEventListener("click",()=>perform(refresh));
  $("hubArchiveNow").addEventListener("click",()=>perform(()=>archive(true)));
 }
